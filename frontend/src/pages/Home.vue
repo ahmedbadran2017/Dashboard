@@ -15,6 +15,12 @@
     <!-- Period segmented control -->
     <PeriodTabs class="mb-3 lg:[column-span:all]" />
 
+    <!-- API error (so a failed load isn't a silent zero) -->
+    <div v-if="res.error" class="card mb-3 flex items-center gap-2 p-3.5 lg:[column-span:all]" style="border-inline-start: 3px solid var(--jy-red)">
+      <Icon name="alert" :size="16" style="color: var(--jy-red)" />
+      <span class="text-[12px]" style="color: var(--jy-text-2)">{{ i18n.t("errorLoad") }} — <span class="num">{{ res.error.message }}</span></span>
+    </div>
+
     <!-- Hero KPI card -->
     <div class="mb-3 p-[18px] lg:[column-span:all]" style="background: #1a1a1a; border: 1px solid rgba(255,255,255,0.09); border-radius: 18px">
       <div class="flex items-start justify-between">

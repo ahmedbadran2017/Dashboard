@@ -19,6 +19,13 @@
 
 {%- block script %}
 <script>
+  // Expose the session CSRF token so the SPA's POST /api/method calls are
+  // accepted (Frappe rejects POSTs without a matching token). Without this every
+  // data call 400s and the dashboard renders empty. Token comes from ops.py's
+  // get_context (frappe.sessions.get_csrf_token) — page is no_cache per session.
+  window.csrf_token = "{{ csrf_token }}";
+</script>
+<script>
   // Register the service worker for offline shell + installability.
   // The worker is served from the site root (/sw.js via Frappe www/) so it can
   // claim the /ops/ scope — a worker under /assets/ cannot without a header
