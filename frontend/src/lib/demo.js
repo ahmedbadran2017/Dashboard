@@ -276,6 +276,17 @@ const PROFIT = {
   supplier_payable: 22103812,
 };
 
+// Ad performance — blended ROAS (sales ÷ spend), CPO, channel split.
+// Channel mix follows the design's marketing breakdown (Meta ~60 / TikTok ~24 / Google ~15).
+const ADS = {
+  today: { needs_config: false, currency: "MAD", spend: 3300, sales: 29400, roas: 8.9, roas_delta: 0.4, cpo: 21,
+    channels: [{ id: "meta", spend: 2100, share: 63.6 }, { id: "tiktok", spend: 820, share: 24.8 }, { id: "google", spend: 380, share: 11.5 }] },
+  d7: { needs_config: false, currency: "MAD", spend: 54200, sales: 483000, roas: 8.9, roas_delta: -0.2, cpo: 21,
+    channels: [{ id: "meta", spend: 34600, share: 63.8 }, { id: "tiktok", spend: 13200, share: 24.4 }, { id: "google", spend: 6400, share: 11.8 }] },
+  d30: { needs_config: false, currency: "MAD", spend: 241000, sales: 2120000, roas: 8.8, roas_delta: 0.3, cpo: 21,
+    channels: [{ id: "meta", spend: 152000, share: 63.1 }, { id: "tiktok", spend: 60000, share: 24.9 }, { id: "google", spend: 29000, share: 12.0 }] },
+};
+
 export async function demoResolve(method, params = {}) {
   let p = params.period || "today";
   // custom range → nearest dataset by span (the real backend aggregates exactly)
@@ -345,6 +356,8 @@ export async function demoResolve(method, params = {}) {
       return CASH;
     case "profit":
       return PROFIT;
+    case "overview":
+      return ADS[p] || ADS.d7;
     default:
       return null;
   }

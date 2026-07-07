@@ -105,6 +105,41 @@
         </div>
       </div>
 
+      <!-- Ad performance (blended ROAS) -->
+      <div v-if="ads.needs_config" class="card mb-3 flex items-center gap-2 p-3.5 lg:break-inside-avoid" style="background: var(--jy-bg-2)">
+        <Icon name="trend" :size="16" style="color: var(--jy-mute)" />
+        <span class="text-[12px]" style="color: var(--jy-mute)">{{ i18n.t("connectAds") }}</span>
+      </div>
+      <div v-else-if="ads.roas" class="card mb-3 p-4 lg:break-inside-avoid">
+        <div class="mb-3 text-[13px] font-extrabold">{{ i18n.t("adsTitle") }}</div>
+        <div class="mb-3 grid grid-cols-3 gap-2">
+          <div class="rounded-[10px] p-2.5" style="background: var(--jy-green-tint)">
+            <div class="text-[10px]" style="color: var(--jy-green)">{{ i18n.t("roas") }}</div>
+            <div class="num text-[18px] font-extrabold" style="color: var(--jy-green)">{{ ads.roas }}×</div>
+          </div>
+          <div class="rounded-[10px] p-2.5" style="background: var(--jy-bg-2)">
+            <div class="text-[10px]" style="color: var(--jy-mute)">{{ i18n.t("adSpend") }}</div>
+            <div class="num text-[18px] font-extrabold">{{ money(ads.spend) }}</div>
+          </div>
+          <div class="rounded-[10px] p-2.5" style="background: var(--jy-bg-2)">
+            <div class="text-[10px]" style="color: var(--jy-mute)">{{ i18n.t("costPerOrder") }}</div>
+            <div class="num text-[18px] font-extrabold">{{ n(ads.cpo) }} <span class="text-[10px]" style="color: var(--jy-mute)">MAD</span></div>
+          </div>
+        </div>
+        <div v-for="c in adChannels" :key="c.id" class="mb-2 last:mb-0">
+          <div class="flex items-center gap-2">
+            <span class="h-[8px] w-[8px] shrink-0 rounded-[3px]" :style="{ background: c.color }" />
+            <span class="text-[12px] font-bold">{{ c.label }}</span>
+            <span class="num text-[10px]" style="color: var(--jy-mute)">{{ c.share }}%</span>
+            <span class="flex-1" />
+            <span class="num text-[12px] font-extrabold">{{ money(c.spend) }}</span>
+          </div>
+          <div class="mt-1 h-[5px] overflow-hidden rounded-full" style="background: var(--jy-bg-2)">
+            <div class="fill-x h-full rounded-full" :style="{ width: Math.max(2, c.share) + '%', background: c.color }" />
+          </div>
+        </div>
+      </div>
+
       <!-- Top products -->
       <div v-if="topProducts.length" class="card mb-3 p-4 lg:break-inside-avoid">
         <div class="mb-3 text-[13px] font-extrabold">{{ i18n.t("topProductsTitle") }}</div>
@@ -208,7 +243,18 @@ const srcRes = createResource({ url: "ops_dashboard.api.kpis.sources" });
 const storeRes = createResource({ url: "ops_dashboard.api.business.storefront" });
 const productsRes = createResource({ url: "ops_dashboard.api.business.top_products" });
 const lowStockRes = createResource({ url: "ops_dashboard.api.business.low_stock", initial: [] });
+const adsRes = createResource({ url: "ops_dashboard.api.marketing.overview" });
 const storefront = computed(() => storeRes.data || {});
+const ads = computed(() => adsRes.data || {});
+const AD_CH = {
+  meta: { key: "chMeta", color: "var(--jy-blue)" },
+  tiktok: { key: "chTiktok", color: "var(--jy-ink)" },
+  google: { key: "chGoogle", color: "var(--jy-orange)" },
+  other: { key: "chOther", color: "var(--jy-mute)" },
+};
+const adChannels = computed(() =>
+  (ads.value.channels || []).map((c) => ({ ...c, label: i18n.t((AD_CH[c.id] || AD_CH.other).key), color: (AD_CH[c.id] || AD_CH.other).color }))
+);
 const topProducts = computed(() => productsRes.data || []);
 const lowStock = computed(() => lowStockRes.data || []);
 const storeSteps = computed(() => {
@@ -240,6 +286,7 @@ async function load() {
   srcRes.fetch(periodParams());
   storeRes.fetch(periodParams());
   productsRes.fetch(periodParams());
+  adsRes.fetch(periodParams());
   lowStockRes.fetch();
   await res.fetch(periodParams());
   countUp(prev, d.value.orders || 0);

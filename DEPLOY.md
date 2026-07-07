@@ -88,6 +88,42 @@ reports. If the card shows "connect Shopify":
 Nothing else breaks if it's not set — the card just shows the prompt. Everything
 else (cash, profit, products, orders, …) is ERPNext-only and needs no config.
 
+## 5b. Ad performance (Meta / TikTok / Google)
+
+The Home "Ad performance" card shows **blended ROAS** (ERPNext sales ÷ total ad
+spend), cost-per-order, and spend by channel. Spend is NOT pulled live — a
+scheduled job (`sync_all_ad_spend`, every 4h) writes each platform's daily spend
+into the `JoyAgent Ad Spend` doctype and the card reads from there. Until spend
+syncs, the card shows "connect ad accounts" (nothing else breaks).
+
+Set the platform credentials in site config (each is independent — set the ones
+you have; the others stay dormant):
+
+```bash
+# Meta (account + token exist — 168583286019654)
+bench --site admin.justyol.com set-config meta_ads_token "EAAG..."
+bench --site admin.justyol.com set-config meta_ads_account "168583286019654"
+
+# TikTok
+bench --site admin.justyol.com set-config tiktok_access_token "..."
+bench --site admin.justyol.com set-config tiktok_advertiser_id "..."
+
+# Google Ads (account 7430474060 — OAuth currently needs renewal before this works)
+bench --site admin.justyol.com set-config google_ads_developer_token "..."
+bench --site admin.justyol.com set-config google_ads_client_id "..."
+bench --site admin.justyol.com set-config google_ads_client_secret "..."
+bench --site admin.justyol.com set-config google_ads_refresh_token "..."
+bench --site admin.justyol.com set-config google_ads_customer_id "7430474060"
+bench --site admin.justyol.com set-config google_ads_login_customer_id "8494173705"
+```
+
+Then force a first sync + verify (System Manager):
+`bench --site admin.justyol.com execute ops_dashboard.api.marketing.sync_now`
+It returns `{meta: {ok, days}, tiktok: {...}, google: {...}}` — check which
+platforms succeeded. **These API calls could not be tested pre-deploy**; if a
+platform returns `ok:false`, the `reason` says why (bad token, OAuth expired,
+wrong account). ROAS still computes from whichever channels did sync.
+
 ## 6. Finance figures — how they're scoped
 
 - **Cash available** sums only positive bank balances (accounts that hold money);

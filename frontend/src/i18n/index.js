@@ -78,6 +78,16 @@ const STR = {
   topExpenses: ["أكبر المصروفات", "Top expenses"],
   supplierPayable: ["مستحقات الموردين", "Owed to suppliers"],
   operatingCompany: ["شركة التشغيل", "operating company"],
+  // ads / marketing
+  adsTitle: ["أداء الإعلانات", "Ad performance"],
+  roas: ["العائد على الإنفاق", "ROAS"],
+  adSpend: ["إجمالي الإنفاق", "Total spend"],
+  costPerOrder: ["تكلفة الأوردر", "Cost per order"],
+  connectAds: ["اربط حسابات الإعلانات عشان تشوف الـ ROAS والإنفاق", "Connect ad accounts to see ROAS & spend"],
+  chMeta: ["ميتا (فيسبوك/انستجرام)", "Meta (FB/IG)"],
+  chTiktok: ["تيك توك", "TikTok"],
+  chGoogle: ["جوجل", "Google"],
+  chOther: ["أخرى", "Other"],
   // cod
   codTitle: ["تحصيل الدفع عند الاستلام", "COD collection"],
   codCollected: ["اتحصّل", "Collected"],

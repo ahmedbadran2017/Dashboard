@@ -24,3 +24,15 @@ doc_events = {
         "on_update": "ops_dashboard.api._base.bust_kpi_cache",
     },
 }
+
+# ── Scheduled jobs ───────────────────────────────────────────────
+# Pull ad spend (Meta / TikTok / Google) into the JoyAgent Ad Spend doctype so
+# the Ad-performance card reads a local table instead of hitting the platforms
+# live. Runs a few times a day to keep "today" fresh.
+scheduler_events = {
+    "cron": {
+        "0 */4 * * *": [  # every 4 hours
+            "ops_dashboard.api.marketing.sync_all_ad_spend",
+        ],
+    },
+}
