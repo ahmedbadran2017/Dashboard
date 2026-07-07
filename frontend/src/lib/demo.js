@@ -252,28 +252,22 @@ const LOW_STOCK = [
   { item_code: "TERLIK-36", name: "Chaussons Orthopédiques Unisexes - Vison / 36", qty: 13, sold: 42 },
   { item_code: "SAC-MOODS", name: "Sac Bandoulière Femme MOODS - Brown", qty: 30, sold: 41 },
 ];
+// From accounting_portal.api.dashboard.get_overview on prod (2026-07-07).
 const CASH = {
-  currency: "MAD", bank_total: 1173364, carrier_float: 453133, card_total: 662400,
-  total: 2288897,
-  accounts: [
-    { name: "BMCE-…130355", bal: 918294, kind: "bank" },
-    { name: "Kuveyttürk Credit Card …7778", bal: 476619, kind: "card" },
-    { name: "Cathedis Transactions", bal: 453133, kind: "carrier" },
-    { name: "Credit Card …332506", bal: 160000, kind: "card" },
-    { name: "CIH-…950128", bal: 93535, kind: "bank" },
-    { name: "Petty Cash", bal: 68550, kind: "bank" },
+  source: "accounting_portal", currency: "MAD", operating: "Justyol Morocco",
+  cash_bank: -3375461, total_cash_bank: -6718874,
+  receivable: -1951478, payable: 1429169,
+  companies: [
+    { company: "Justyol Morocco", currency: "MAD", cash_bank: -3375461, net_ytd: -897051 },
+    { company: "Maslak LTD", currency: "TRY", cash_bank: -3609413, net_ytd: -7009878 },
+    { company: "Justyol Holding", currency: "USD", cash_bank: 266000, net_ytd: 0 },
+    { company: "Justyol China", currency: "USD", cash_bank: 0, net_ytd: -40621 },
   ],
 };
 const PROFIT = {
-  currency: "MAD", company: "Justyol Morocco", window: "30d",
-  revenue: 396037, cogs: 185398, opex: 7246, gross: 210639, net: 203393, margin: 53.2,
-  top_expenses: [
-    { name: "Cost of Goods Sold", amount: 185398 },
-    { name: "Mix Digital Marketing", amount: 7000 },
-    { name: "Depreciation", amount: 217 },
-    { name: "Round Off", amount: 29 },
-  ],
-  supplier_payable: 22103812,
+  source: "accounting_portal", company: "Justyol Morocco", window: "ytd", currency: "MAD",
+  revenue: 9435749, expenses: 10332800, net: -897051, margin: -9.5,
+  receivable: -1951478, payable: 1429169, supplier_payable: 22103812,
 };
 
 // Ad performance — blended ROAS (sales ÷ spend), CPO, channel split.

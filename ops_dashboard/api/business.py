@@ -75,90 +75,118 @@ def low_stock(company=None, threshold=30, limit=10):
     return B.cached(ck, build)
 
 
+def _overview():
+    """The accounting portal's authoritative multi-company finance overview
+    (per-company cash_bank / receivable / payable / income_ytd / expense_ytd /
+    net_ytd + consolidated totals). It already handles the multi-company,
+    multi-currency, intercompany and overdraft/FX complexity that raw GL
+    aggregation gets wrong — so we reuse it rather than re-derive. Returns None
+    when the accounting portal isn't installed (dev/standalone)."""
+    def build():
+        try:
+            if "accounting_portal" in frappe.get_installed_apps():
+                ov = frappe.get_attr("accounting_portal.api.dashboard.get_overview")()
+                if isinstance(ov, dict) and ov.get("companies"):
+                    return ov
+        except Exception:
+            pass
+        return None
+    return B.cached("ops_kpi:overview", build)
+
+
+def _supplier_payable():
+    """Open supplier obligation = unbilled value of submitted POs."""
+    v = frappe.db.sql(
+        """SELECT ROUND(SUM(grand_total * (100 - IFNULL(per_billed, 0)) / 100))
+           FROM `tabPurchase Order`
+           WHERE docstatus = 1 AND status IN ('To Bill', 'To Receive and Bill')"""
+    )[0][0]
+    return flt(v)
+
+
 @frappe.whitelist()
 def cash(company=None):
-    """Cash position: operating bank accounts that hold money, plus COD cash still
-    held by the carriers ('… Transactions' accounts). Only positive balances are
-    summed — loans/overdrafts/FX accounts are also account_type=Bank and would
-    drag a naive total negative."""
+    """Cash position, sourced from the accounting portal's overview (authoritative):
+    net cash & bank per company + consolidated. On this book the operating banks
+    net NEGATIVE (overdrafts / intercompany / FX), which raw positive-only summing
+    hid — so we surface the real figures. Falls back to a positive-bank sum when
+    the accounting portal isn't present."""
     B.assert_access()
-    ck = "ops_kpi:cash"
-
+    ov = _overview()
+    if ov:
+        comps = ov.get("companies") or []
+        tot = ov.get("totals") or {}
+        op = next((c for c in comps if c.get("company") == OPERATING_COMPANY), comps[0] if comps else {})
+        return {
+            "source": "accounting_portal",
+            "currency": op.get("currency", "MAD"),
+            "cash_bank": flt(op.get("cash_bank")),
+            "total_cash_bank": flt(tot.get("cash_bank")),
+            "receivable": flt(op.get("receivable")),
+            "payable": flt(op.get("payable")),
+            "operating": op.get("company"),
+            "companies": [
+                {"company": c.get("company"), "currency": c.get("currency"),
+                 "cash_bank": flt(c.get("cash_bank")), "net_ytd": flt(c.get("net_ytd"))}
+                for c in comps
+            ],
+        }
+    # Fallback (no accounting portal): positive bank balances only.
     def build():
         rows = frappe.db.sql(
             """
-            SELECT a.account_name AS name, ROUND(SUM(g.debit - g.credit)) AS bal,
-                   CASE WHEN a.account_name LIKE '%%Transaction%%' THEN 'carrier'
-                        WHEN a.account_name LIKE '%%Card%%' THEN 'card'
-                        ELSE 'bank' END AS kind
+            SELECT a.account_name AS name, ROUND(SUM(g.debit - g.credit)) AS bal
             FROM `tabGL Entry` g JOIN `tabAccount` a ON a.name = g.account
             WHERE a.account_type = 'Bank' AND g.is_cancelled = 0
-            GROUP BY a.account_name HAVING bal > 1000 ORDER BY bal DESC LIMIT 14
-            """,
-            as_dict=True,
-        )
+            GROUP BY a.account_name HAVING bal > 1000 ORDER BY bal DESC LIMIT 10
+            """, as_dict=True)
         for r in rows:
             r["bal"] = flt(r["bal"])
-        bank = sum(r["bal"] for r in rows if r["kind"] == "bank")
-        carrier = sum(r["bal"] for r in rows if r["kind"] == "carrier")
-        card = sum(r["bal"] for r in rows if r["kind"] == "card")
-        return {
-            "currency": "MAD",
-            "bank_total": bank,
-            "carrier_float": carrier,
-            "card_total": card,
-            "total": bank + card + carrier,
-            "accounts": rows[:8],
-        }
-
-    return B.cached(ck, build)
+        return {"source": "fallback", "currency": "MAD",
+                "cash_bank": sum(r["bal"] for r in rows), "total_cash_bank": sum(r["bal"] for r in rows),
+                "accounts": rows[:8]}
+    return B.cached("ops_kpi:cash", build)
 
 
 @frappe.whitelist()
 def profit(company=None):
-    """Trailing-30-day P&L for the operating company: revenue, COGS, gross margin,
-    operating expenses, net — plus the top expense lines and open supplier
-    payables (unbilled POs). 30-day rolling because GL posting lags intraday."""
+    """Profitability from the accounting portal overview — YEAR-TO-DATE for the
+    operating company (revenue, expenses, net, net margin) + open supplier
+    payables. YTD (not intraday GL) because invoice posting lags; the live today
+    revenue signal stays the Sales-Order value on Home."""
     B.assert_access()
-    ck = "ops_kpi:profit"
-
+    ov = _overview()
+    if ov:
+        comps = ov.get("companies") or []
+        op = next((c for c in comps if c.get("company") == OPERATING_COMPANY), comps[0] if comps else {})
+        rev = flt(op.get("income_ytd"))
+        exp = flt(op.get("expense_ytd"))
+        net = flt(op.get("net_ytd"))
+        return {
+            "source": "accounting_portal", "company": op.get("company"), "window": "ytd",
+            "currency": op.get("currency", "MAD"),
+            "revenue": rev, "expenses": exp, "net": net,
+            "margin": round(100.0 * net / rev, 1) if rev else 0,
+            "receivable": flt(op.get("receivable")), "payable": flt(op.get("payable")),
+            "supplier_payable": _supplier_payable(),
+        }
+    # Fallback: trailing-30d GL P&L for the operating company.
     def build():
         rows = frappe.db.sql(
-            """
-            SELECT a.account_name AS name, a.root_type AS rt,
-                   ROUND(SUM(CASE WHEN a.root_type = 'Income' THEN g.credit - g.debit
-                                  ELSE g.debit - g.credit END)) AS amt
-            FROM `tabGL Entry` g JOIN `tabAccount` a ON a.name = g.account
-            WHERE g.is_cancelled = 0 AND g.company = %(c)s
-              AND a.root_type IN ('Income', 'Expense')
-              AND g.posting_date >= CURDATE() - INTERVAL 30 DAY
-            GROUP BY a.account_name
-            """,
-            {"c": OPERATING_COMPANY}, as_dict=True,
-        )
-        income = sum(flt(r["amt"]) for r in rows if r["rt"] == "Income")
-        cogs = sum(flt(r["amt"]) for r in rows if r["rt"] == "Expense" and "Goods Sold" in (r["name"] or ""))
-        opex = sum(flt(r["amt"]) for r in rows if r["rt"] == "Expense" and "Goods Sold" not in (r["name"] or ""))
-        gross = income - cogs
-        net = gross - opex
-        top_exp = sorted(
-            [r for r in rows if r["rt"] == "Expense" and flt(r["amt"]) > 0],
-            key=lambda r: -flt(r["amt"]))[:5]
-        payable = frappe.db.sql(
-            """SELECT ROUND(SUM(grand_total * (100 - IFNULL(per_billed, 0)) / 100))
-               FROM `tabPurchase Order`
-               WHERE docstatus = 1 AND status IN ('To Bill', 'To Receive and Bill')"""
-        )[0][0]
-        return {
-            "currency": "MAD", "company": OPERATING_COMPANY, "window": "30d",
-            "revenue": flt(income), "cogs": flt(cogs), "opex": flt(opex),
-            "gross": flt(gross), "net": flt(net),
-            "margin": round(100.0 * gross / income, 1) if income else 0,
-            "top_expenses": [{"name": r["name"], "amount": flt(r["amt"])} for r in top_exp],
-            "supplier_payable": flt(payable),
-        }
-
-    return B.cached(ck, build)
+            """SELECT a.root_type AS rt,
+                      ROUND(SUM(CASE WHEN a.root_type='Income' THEN g.credit-g.debit
+                                     ELSE g.debit-g.credit END)) AS amt
+               FROM `tabGL Entry` g JOIN `tabAccount` a ON a.name=g.account
+               WHERE g.is_cancelled=0 AND g.company=%(c)s AND a.root_type IN ('Income','Expense')
+                 AND g.posting_date >= CURDATE()-INTERVAL 30 DAY GROUP BY a.root_type""",
+            {"c": OPERATING_COMPANY}, as_dict=True)
+        rev = sum(flt(r["amt"]) for r in rows if r["rt"] == "Income")
+        exp = sum(flt(r["amt"]) for r in rows if r["rt"] == "Expense")
+        return {"source": "fallback", "company": OPERATING_COMPANY, "window": "30d", "currency": "MAD",
+                "revenue": rev, "expenses": exp, "net": rev - exp,
+                "margin": round(100.0 * (rev - exp) / rev, 1) if rev else 0,
+                "supplier_payable": _supplier_payable()}
+    return B.cached("ops_kpi:profit", build)
 
 
 # ── Storefront (Shopify) ─────────────────────────────────────────

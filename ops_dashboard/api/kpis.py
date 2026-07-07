@@ -120,6 +120,32 @@ def _late(company):
     return int(n or 0)
 
 
+def _quality(company, start_days=35, end_days=5):
+    """Delivery & return rates are LAGGING — a COD order placed today isn't
+    delivered today, and the Sales Order carries no delivery timestamp, so a
+    period-scoped (esp. 'today') rate reads a misleading ~0. Instead compute them
+    over a matured cohort: orders placed between `start_days` and `end_days` ago
+    (the recent-most days are excluded so the cohort has had time to deliver).
+    Default = the 30-day window ending 5 days ago; pass (65, 35) for the prior
+    window to get a delta."""
+    p = {}
+    comp = B.company_cond(company, p)
+    row = frappe.db.sql(
+        f"""
+        SELECT
+          SUM(CASE WHEN {B.IS_DISPATCHED} THEN 1 ELSE 0 END) AS dispatched,
+          SUM(CASE WHEN {B.IS_DELIVERED} THEN 1 ELSE 0 END) AS delivered,
+          SUM(CASE WHEN {B.IS_RETURNED} THEN 1 ELSE 0 END) AS returned,
+          SUM({B.IS_REAL}) AS real_orders
+        FROM `tabSales Order` so
+        WHERE so.docstatus = 1
+          AND so.transaction_date >= CURDATE() - INTERVAL {int(start_days)} DAY
+          AND so.transaction_date <  CURDATE() - INTERVAL {int(end_days)} DAY{comp}
+        """,
+        p, as_dict=True)[0]
+    return {k: flt(v) for k, v in row.items()}
+
+
 def _forecast(count_today):
     """Project end-of-day volume from the current hourly rate over a 12h business
     day (09:00–21:00). Only meaningful for the 'today' period."""
@@ -184,13 +210,18 @@ def home(period="today", company=None, from_date=None, to_date=None):
         start, end, ps, pe, _ = B.resolve_period(period, from_date, to_date)
         cur = _agg(start, end, company)
         prev = _agg(ps, pe, company)
+        # Delivery & return rates use a MATURED trailing cohort (see _quality) —
+        # not the selected period — because delivery lags and there's no delivery
+        # timestamp, so a period rate (esp. today) would misleadingly read ~0.
+        q = _quality(company, 35, 5)
+        qp = _quality(company, 65, 35)
 
         conf = _rate(cur["confirmed"], cur["real_orders"])
         conf_prev = _rate(prev["confirmed"], prev["real_orders"])
-        deliv = _rate(cur["delivered"], cur["dispatched"])
-        deliv_prev = _rate(prev["delivered"], prev["dispatched"])
-        ret = _rate(cur["returned"], cur["real_orders"])
-        ret_prev = _rate(prev["returned"], prev["real_orders"])
+        deliv = _rate(q["delivered"], q["dispatched"])
+        deliv_prev = _rate(qp["delivered"], qp["dispatched"])
+        ret = _rate(q["returned"], q["real_orders"])
+        ret_prev = _rate(qp["returned"], qp["real_orders"])
         # AOV over real orders, matching the real-only sales value
         aov = round(cur["value"] / cur["real_orders"]) if cur["real_orders"] else 0
         aov_prev = round(prev["value"] / prev["real_orders"]) if prev["real_orders"] else 0
