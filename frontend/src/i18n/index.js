@@ -31,6 +31,15 @@ const STR = {
   rDelivery: ["معدل التسليم", "Delivery rate"],
   rAov: ["متوسط قيمة الأوردر", "Avg order value"],
   rReturns: ["نسبة المرتجعات", "Return rate"],
+  // sources
+  sourcesTitle: ["مصادر الأوردرات", "Order sources"],
+  srcShopify: ["شوبيفاي", "Shopify"],
+  srcYoucan: ["يوكان", "YouCan"],
+  srcLanding: ["لاندينج", "Landing"],
+  srcAgent: ["أجينت", "Agent"],
+  srcOther: ["تاني", "Other"],
+  confShort: ["تأكيد", "conf."],
+  allSources: ["كل المصادر", "All sources"],
   // cod
   codTitle: ["تحصيل الدفع عند الاستلام", "COD collection"],
   codCollected: ["اتحصّل", "Collected"],

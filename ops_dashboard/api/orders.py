@@ -30,12 +30,12 @@ _COND = {
 
 
 @frappe.whitelist()
-def counts(period="today", company=None, from_date=None, to_date=None):
+def counts(period="today", company=None, from_date=None, to_date=None, source=None):
     """Per-status chip counts for the period (All + the five statuses)."""
     B.assert_access()
     start, end, _, _, _ = B.resolve_period(period, from_date, to_date)
     params = {}
-    where = B.base_where(start, end, company, params)
+    where = B.base_where(start, end, company, params) + B.source_cond(source, params)
     row = frappe.db.sql(
         f"""
         SELECT
@@ -58,12 +58,15 @@ def counts(period="today", company=None, from_date=None, to_date=None):
 
 @frappe.whitelist()
 def list_orders(period="today", status="all", city=None, search=None,
-                company=None, from_date=None, to_date=None, limit=100):
-    """Orders in the period, filtered by status / city / search — newest first."""
+                company=None, from_date=None, to_date=None, limit=100, source=None):
+    """Orders in the period, filtered by status / source / city / search — newest first."""
     B.assert_access()
     start, end, _, _, _ = B.resolve_period(period, from_date, to_date)
     params = {"limit": min(int(limit or 100), 500)}
     conds = [B.base_where(start, end, company, params)]
+    src = B.source_cond(source, params)
+    if src:
+        conds.append(src.replace(" AND ", "", 1))
     if status and status != "all" and status in _COND:
         conds.append("(" + _COND[status] + ")")
     if city and city != "all":
@@ -81,6 +84,7 @@ def list_orders(period="today", status="all", city=None, search=None,
                ROUND(so.grand_total) AS amount,
                DATE_FORMAT(so.creation, '%%H:%%i') AS time,
                so.transaction_date AS date,
+               {B.SOURCE_CASE} AS source,
                {UI_STATUS_CASE} AS status
         FROM `tabSales Order` so WHERE {where}
         ORDER BY so.creation DESC LIMIT %(limit)s

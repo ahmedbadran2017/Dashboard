@@ -37,6 +37,30 @@ SHIPPED_LOG = "('Shipped','Label Generated','Label Printed','Delivered','Returne
 # (see accounting_portal/api/cod.py — kept identical here).
 REF_PREFIXES = ("CATH", "RDF")
 
+# ── Order source (sales channel) ─────────────────────────────────
+# The Sales Order naming series encodes the channel — verified live 2026-07:
+#   #…    Shopify storefront          J-…    landing pages
+#   YC-…  YouCan store                SAL-…  agent / manual entry
+# These four cover 100% of orders (custom_channel is only filled for
+# YouCan/Landing, so the name prefix is the reliable classifier).
+SOURCE_CASE = (
+    "CASE WHEN so.name LIKE '#%%' THEN 'shopify' "
+    "WHEN so.name LIKE 'YC-%%' THEN 'youcan' "
+    "WHEN so.name LIKE 'J-%%' THEN 'landing' "
+    "WHEN so.name LIKE 'SAL-%%' THEN 'agent' "
+    "ELSE 'other' END"
+)
+SOURCE_PREFIX = {"shopify": "#", "youcan": "YC-", "landing": "J-", "agent": "SAL-"}
+SOURCES = ("shopify", "youcan", "landing", "agent")
+
+
+def source_cond(source, params):
+    """WHERE fragment scoping to one source (by name prefix)."""
+    if source and source in SOURCE_PREFIX:
+        params["src_prefix"] = SOURCE_PREFIX[source] + "%"
+        return " AND so.name LIKE %(src_prefix)s"
+    return ""
+
 
 def ref_present(col):
     return "(" + " OR ".join(f"IFNULL({col},'') LIKE '{p}%%'" for p in REF_PREFIXES) + ")"

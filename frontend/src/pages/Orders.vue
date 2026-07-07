@@ -24,6 +24,18 @@
       >{{ c.label }} <span class="num opacity-70">{{ n(c.count) }}</span></button>
     </div>
 
+    <!-- Source chips -->
+    <div class="mb-2 flex gap-2 overflow-x-auto pb-1">
+      <button
+        v-for="s in sourceChips" :key="s.id"
+        class="pill flex shrink-0 items-center gap-1.5 whitespace-nowrap px-3 py-1 text-[11px] font-bold"
+        :style="s.id === source
+          ? 'background: var(--jy-blue-tint); color: var(--jy-blue); border: 1px solid var(--jy-blue)'
+          : 'background: var(--jy-surface); color: var(--jy-mute); border: 1px solid var(--jy-line)'"
+        @click="source = s.id"
+      ><span v-if="s.dot" class="h-[7px] w-[7px] rounded-[2px]" :style="{ background: s.dot }" />{{ s.label }}</button>
+    </div>
+
     <!-- City chips -->
     <div class="mb-3 flex gap-2 overflow-x-auto pb-1">
       <button
@@ -47,7 +59,10 @@
       @click="openOrder(o)"
     >
       <div class="min-w-0 flex-1">
-        <div class="num text-[13px] font-extrabold">{{ o.id }}</div>
+        <div class="flex items-center gap-1.5">
+          <span class="num text-[13px] font-extrabold">{{ o.id }}</span>
+          <span v-if="SRC[o.source]" class="h-[7px] w-[7px] shrink-0 rounded-[2px]" :style="{ background: SRC[o.source].color }" :title="SRC[o.source].label" />
+        </div>
         <div class="truncate text-[12px]" style="color: var(--jy-text-2)">{{ o.customer }}</div>
         <div class="truncate text-[10px]" style="color: var(--jy-mute)">{{ o.city }} · <span class="num">{{ o.time }}</span></div>
       </div>
@@ -79,7 +94,16 @@ const { period, refreshNonce } = useDashboard();
 
 const status = ref("all");
 const city = ref("all");
+const source = ref("all");
 const query = ref("");
+
+// channel colors match the Home sources card
+const SRC = {
+  shopify: { label: "Shopify", color: "var(--jy-green)" },
+  youcan: { label: "YouCan", color: "var(--jy-blue)" },
+  landing: { label: "Landing", color: "var(--jy-orange)" },
+  agent: { label: "Agent", color: "var(--jy-mute)" },
+};
 
 const ST = computed(() => ({
   new: { label: i18n.t("sNew"), bg: "var(--jy-bg-2)", fg: "var(--jy-text-2)" },
@@ -95,14 +119,15 @@ const res = createResource({ url: "ops_dashboard.api.orders.list_orders" });
 const rows = computed(() => res.data || []);
 
 function loadMeta() {
-  countsRes.fetch({ period: period.value });
+  countsRes.fetch({ period: period.value, source: source.value === "all" ? null : source.value });
   citiesRes.fetch({ period: period.value });
 }
 let searchTimer;
 function loadList() {
   clearTimeout(searchTimer);
   searchTimer = setTimeout(() => {
-    res.fetch({ period: period.value, status: status.value, city: city.value, search: query.value });
+    res.fetch({ period: period.value, status: status.value, city: city.value, search: query.value,
+                source: source.value === "all" ? null : source.value });
   }, query.value ? 220 : 0);
 }
 loadMeta();
@@ -110,6 +135,7 @@ loadList();
 watch(period, () => { loadMeta(); loadList(); });
 watch(refreshNonce, () => { loadMeta(); loadList(); });
 watch([status, city, query], loadList);
+watch(source, () => { loadMeta(); loadList(); });
 
 const statusChips = computed(() => {
   const c = countsRes.data || {};
@@ -126,6 +152,14 @@ const statusChips = computed(() => {
 const cityChips = computed(() => [
   { id: "all", label: i18n.t("allCities") },
   ...(citiesRes.data || []).map((c) => ({ id: c, label: c })),
+]);
+
+const sourceChips = computed(() => [
+  { id: "all", label: i18n.t("allSources"), dot: null },
+  { id: "shopify", label: i18n.t("srcShopify"), dot: SRC.shopify.color },
+  { id: "youcan", label: i18n.t("srcYoucan"), dot: SRC.youcan.color },
+  { id: "landing", label: i18n.t("srcLanding"), dot: SRC.landing.color },
+  { id: "agent", label: i18n.t("srcAgent"), dot: SRC.agent.color },
 ]);
 
 // detail sheet

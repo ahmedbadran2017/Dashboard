@@ -64,6 +64,27 @@
         </div>
       </div>
 
+      <!-- Order sources -->
+      <div class="card mb-3 p-4">
+        <div class="mb-3 text-[13px] font-extrabold">{{ i18n.t("sourcesTitle") }}</div>
+        <div v-for="(s, i) in sourceRows" :key="s.id" class="mb-3 last:mb-0">
+          <div class="flex items-center gap-2">
+            <span class="h-[8px] w-[8px] shrink-0 rounded-[3px]" :style="{ background: s.color }" />
+            <span class="text-[12px] font-bold">{{ s.label }}</span>
+            <span class="num text-[10px]" style="color: var(--jy-mute)">{{ s.share }}%</span>
+            <span class="flex-1" />
+            <span class="num text-[12px] font-extrabold">{{ n(s.orders) }}</span>
+            <span class="num w-14 text-end text-[11px]" style="color: var(--jy-mute)">{{ money(s.value) }}</span>
+          </div>
+          <div class="mt-1.5 flex items-center gap-2">
+            <div class="h-[5px] flex-1 overflow-hidden rounded-full" style="background: var(--jy-bg-2)">
+              <div class="fill-x h-full rounded-full" :style="{ width: Math.max(2, s.share) + '%', background: s.color, animationDelay: (i * 70) + 'ms' }" />
+            </div>
+            <span class="num whitespace-nowrap text-[10px] font-bold" :style="{ color: s.confColor }">{{ s.conf_rate }}% {{ i18n.t("confShort") }}</span>
+          </div>
+        </div>
+      </div>
+
       <!-- Rate cards 2x2 -->
       <div class="mb-3 grid grid-cols-2 gap-2.5">
         <div v-for="(r, i) in rateCards" :key="r.key" class="card p-3 anim-stagger" :style="{ animationDelay: (i * 60) + 'ms' }">
@@ -141,6 +162,7 @@ const { period, refreshNonce } = useDashboard();
 
 const res = createResource({ url: "ops_dashboard.api.kpis.home" });
 const d = computed(() => res.data || {});
+const srcRes = createResource({ url: "ops_dashboard.api.kpis.sources" });
 
 // count-up animation for the hero number
 const shownOrdersNum = ref(0);
@@ -159,6 +181,7 @@ function countUp(from, to) {
 
 async function load() {
   const prev = shownOrdersNum.value;
+  srcRes.fetch({ period: period.value });
   await res.fetch({ period: period.value });
   countUp(prev, d.value.orders || 0);
 }
@@ -206,6 +229,26 @@ const funnel = computed(() => {
     delay: 120 + i * 90 + "ms",
   }));
 });
+
+// source rows: color per channel + confirmation-rate quality signal
+const SRC_META = {
+  shopify: { key: "srcShopify", color: "var(--jy-green)" },
+  youcan: { key: "srcYoucan", color: "var(--jy-blue)" },
+  landing: { key: "srcLanding", color: "var(--jy-orange)" },
+  agent: { key: "srcAgent", color: "var(--jy-mute)" },
+  other: { key: "srcOther", color: "var(--jy-mute-2)" },
+};
+const sourceRows = computed(() =>
+  (srcRes.data || []).map((s) => {
+    const m = SRC_META[s.id] || SRC_META.other;
+    return {
+      ...s,
+      label: i18n.t(m.key),
+      color: m.color,
+      confColor: s.conf_rate >= 75 ? "var(--jy-green)" : s.conf_rate >= 60 ? "var(--jy-orange-ink)" : "var(--jy-red)",
+    };
+  })
+);
 
 const rateCards = computed(() => {
   const r = d.value.rates || {};

@@ -75,21 +75,52 @@ function withDates(week) {
   return out;
 }
 
+function srcOf(id) {
+  if (id.startsWith("YC-")) return "youcan";
+  if (id.startsWith("J-")) return "landing";
+  if (id.startsWith("SAL-")) return "agent";
+  return "shopify";
+}
+
 const ORDERS = [
   { id: "#247198", customer: "Lamiaa Lamiaa", city: "الدار البيضاء", amount: 174, status: "new", time: "10:12" },
   { id: "#247197", customer: "Faiza Khoudri", city: "الرباط", amount: 277, status: "new", time: "10:04" },
   { id: "J-001013", customer: "Fatima Zahra Laachari", city: "مراكش", amount: 169, status: "conf", time: "09:51" },
   { id: "#247195", customer: "Fatine Bartot", city: "طنجة", amount: 193, status: "conf", time: "09:36" },
   { id: "#247189", customer: "Hajar Bouchkou", city: "فاس", amount: 319, status: "conf", time: "09:10" },
+  { id: "YC-88231", customer: "Imane Berrada", city: "الدار البيضاء", amount: 246, status: "conf", time: "09:02" },
   { id: "#247184", customer: "Vitalis Vitalis", city: "أكادير", amount: 324, status: "disp", time: "08:44" },
   { id: "#247169", customer: "Sanaa Drissi", city: "الدار البيضاء", amount: 424, status: "disp", time: "08:19" },
   { id: "#247166", customer: "Sara Z", city: "سلا", amount: 522, status: "disp", time: "08:02" },
   { id: "#247174", customer: "فدوى", city: "الدار البيضاء", amount: 159, status: "del", time: "07:58" },
+  { id: "SAL-0042", customer: "Khalid Amrani", city: "الرباط", amount: 210, status: "del", time: "07:45" },
   { id: "#247165", customer: "Sara Elouardi", city: "القنيطرة", amount: 288, status: "del", time: "07:40" },
   { id: "#247156", customer: "Manal Manal", city: "مكناس", amount: 377, status: "del", time: "07:22" },
   { id: "#246384", customer: "أمينة واموّل", city: "وجدة", amount: 129, status: "ret", time: "أمس" },
   { id: "#246202", customer: "برزيك رشيدة", city: "تطوان", amount: 204, status: "ret", time: "أمس" },
-];
+].map((o) => ({ ...o, source: srcOf(o.id) }));
+
+// Live 30-day shape from the 2026-07-07 pull (8017 / 119 / 29 / 10), scaled per period.
+const SOURCES = {
+  today: [
+    { id: "shopify", orders: 149, value: 28100, share: 95.5, conf_rate: 78, ret_rate: 9.3 },
+    { id: "youcan", orders: 4, value: 610, share: 2.6, conf_rate: 71, ret_rate: 11.2 },
+    { id: "landing", orders: 2, value: 390, share: 1.3, conf_rate: 88, ret_rate: 6.1 },
+    { id: "agent", orders: 1, value: 300, share: 0.6, conf_rate: 95, ret_rate: 2.0 },
+  ],
+  d7: [
+    { id: "shopify", orders: 2489, value: 460000, share: 95.3, conf_rate: 76, ret_rate: 9.0 },
+    { id: "youcan", orders: 71, value: 13200, share: 2.7, conf_rate: 70, ret_rate: 10.8 },
+    { id: "landing", orders: 38, value: 7300, share: 1.5, conf_rate: 86, ret_rate: 6.4 },
+    { id: "agent", orders: 14, value: 2500, share: 0.5, conf_rate: 94, ret_rate: 2.2 },
+  ],
+  d30: [
+    { id: "shopify", orders: 11060, value: 2043000, share: 96.3, conf_rate: 75, ret_rate: 9.5 },
+    { id: "youcan", orders: 251, value: 46000, share: 2.2, conf_rate: 69, ret_rate: 11.0 },
+    { id: "landing", orders: 121, value: 22800, share: 1.1, conf_rate: 85, ret_rate: 6.8 },
+    { id: "agent", orders: 48, value: 8200, share: 0.4, conf_rate: 93, ret_rate: 2.5 },
+  ],
+};
 
 const DEPTS = {
   list: [
@@ -170,10 +201,19 @@ export async function demoResolve(method, params = {}) {
       const h = HOME[p] || HOME.today;
       return { ...h, week: withDates(h.week) };
     }
-    case "counts":
+    case "counts": {
+      if (params.source && params.source !== "all") {
+        const rows = ORDERS.filter((o) => o.source === params.source);
+        const by = (st) => rows.filter((o) => o.status === st).length;
+        return { all: rows.length, new: by("new"), conf: by("conf"), disp: by("disp"), del: by("del"), ret: by("ret") };
+      }
       return STATUS_COUNT[p] || STATUS_COUNT.today;
+    }
+    case "sources":
+      return SOURCES[p] || SOURCES.today;
     case "list_orders": {
       let rows = ORDERS.slice();
+      if (params.source && params.source !== "all") rows = rows.filter((o) => o.source === params.source);
       if (params.status && params.status !== "all") rows = rows.filter((o) => o.status === params.status);
       if (params.city && params.city !== "all") rows = rows.filter((o) => o.city === params.city);
       if (params.search) {

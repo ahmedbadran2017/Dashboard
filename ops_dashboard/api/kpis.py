@@ -118,6 +118,48 @@ def _forecast(count_today):
 
 
 @frappe.whitelist()
+def sources(period="today", company=None, from_date=None, to_date=None):
+    """Per-channel breakdown for the period: count, value, share of orders, and
+    the QUALITY signals — confirmation rate and return rate — so each channel's
+    lead quality is visible next to its volume."""
+    B.assert_access()
+    ck = f"ops_kpi:sources:{period}:{company or ''}:{from_date or ''}:{to_date or ''}"
+
+    def build():
+        start, end, _, _, _ = B.resolve_period(period, from_date, to_date)
+        params = {}
+        where = B.base_where(start, end, company, params)
+        rows = frappe.db.sql(
+            f"""
+            SELECT {B.SOURCE_CASE} AS source,
+                   COUNT(*) AS orders,
+                   ROUND(SUM(so.grand_total)) AS value,
+                   SUM({B.IS_REAL}) AS real_orders,
+                   SUM(CASE WHEN {B.IS_CONFIRMED} THEN 1 ELSE 0 END) AS confirmed,
+                   SUM(CASE WHEN {B.IS_RETURNED} THEN 1 ELSE 0 END) AS returned
+            FROM `tabSales Order` so
+            WHERE {where}
+            GROUP BY source ORDER BY orders DESC
+            """,
+            params, as_dict=True,
+        )
+        total = sum(int(r.orders) for r in rows) or 1
+        out = []
+        for r in rows:
+            out.append({
+                "id": r.source,
+                "orders": int(r.orders),
+                "value": flt(r.value),
+                "share": round(100.0 * r.orders / total, 1),
+                "conf_rate": _rate(flt(r.confirmed), flt(r.real_orders)),
+                "ret_rate": _rate(flt(r.returned), flt(r.real_orders)),
+            })
+        return out
+
+    return B.cached(ck, build)
+
+
+@frappe.whitelist()
 def home(period="today", company=None, from_date=None, to_date=None):
     B.assert_access()
     ck = f"ops_kpi:home:{period}:{company or ''}:{from_date or ''}:{to_date or ''}"
