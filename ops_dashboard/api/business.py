@@ -165,18 +165,41 @@ def profit(company=None):
 _SINCE = {"today": "-0d", "d7": "-7d", "d30": "-30d", "custom": "-7d"}
 
 
+def _shopify_creds():
+    """Domain + Admin API token. Reuses the EXISTING ERPNext Shopify integration
+    (the `Shopify Setting` single — its `password` field holds the access token,
+    decrypted server-side), so no separate credentials need to be configured.
+    Falls back to explicit site config (`shopify_domain`/`shopify_token`)."""
+    try:
+        if frappe.db.exists("DocType", "Shopify Setting"):
+            s = frappe.get_single("Shopify Setting")
+            url = (getattr(s, "shopify_url", "") or "").strip()
+            if url and int(getattr(s, "enable_shopify", 0) or 0):
+                token = s.get_password("password", raise_exception=False)
+                if token:
+                    return url, token
+    except Exception:
+        pass
+    return frappe.conf.get("shopify_domain"), frappe.conf.get("shopify_token")
+
+
 @frappe.whitelist()
 def storefront(period="today", from_date=None, to_date=None):
     """Top-of-funnel from Shopify: sessions → cart → checkout → conversion.
-    Reads `shopify_domain` + `shopify_token` from site config (set via
-    `bench --site <site> set-config`). Returns {needs_config: true} when absent so
-    the card can show a 'connect Shopify' prompt instead of erroring."""
+    Credentials come from the existing ERPNext Shopify integration (see
+    _shopify_creds). Returns {needs_config: true} when Shopify isn't reachable so
+    the card shows a prompt instead of erroring. Requires the token to have the
+    `read_reports` scope (ShopifyQL analytics)."""
     B.assert_access()
-    domain = frappe.conf.get("shopify_domain")
-    token = frappe.conf.get("shopify_token")
+    domain, token = _shopify_creds()
     if not (domain and token):
         return {"needs_config": True}
+    # Cache the external call (Shopify analytics update slowly and the API is
+    # rate-limited) so page loads don't each make a 15s round-trip.
+    return B.cached(f"ops_kpi:storefront:{period}", lambda: _fetch_storefront(domain, token, period))
 
+
+def _fetch_storefront(domain, token, period):
     since = _SINCE.get(period, "-7d")
     shopifyql = (
         "FROM sessions SHOW sessions, sessions_with_cart_additions, "
@@ -190,10 +213,11 @@ def storefront(period="today", from_date=None, to_date=None):
             headers={"X-Shopify-Access-Token": token, "Content-Type": "application/json"},
             json={"query": gql, "variables": {"q": shopifyql}}, timeout=15,
         )
-        data = resp.json().get("data", {}).get("shopifyqlQuery", {})
+        data = (resp.json().get("data") or {}).get("shopifyqlQuery") or {}
         rows = (data.get("tableData") or {}).get("rowData") or []
         if not rows:
-            return {"needs_config": False, "empty": True}
+            # empty (e.g. token lacks read_reports, or no traffic) → show the prompt
+            return {"needs_config": True}
         r = rows[0]
         sessions = int(float(r[0] or 0))
         carts = int(float(r[1] or 0))
@@ -208,4 +232,4 @@ def storefront(period="today", from_date=None, to_date=None):
         }
     except Exception as e:
         frappe.log_error(f"Shopify storefront query failed: {e}", "ops_dashboard")
-        return {"needs_config": False, "error": str(e)}
+        return {"needs_config": True}

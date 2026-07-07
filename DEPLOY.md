@@ -66,19 +66,27 @@ role check there — one line.
 - After deploying a new bundle, the SW picks it up on the next open (its
   VERSION string busts old caches; hard-refresh once if an old shell lingers).
 
-## 5. Connect Shopify (storefront traffic + conversion)
+## 5. Storefront traffic + conversion (Shopify)
 
 The Home "Storefront traffic" card (sessions → cart → checkout → conversion)
-pulls from Shopify via ShopifyQL. Set the store domain + an Admin API token
-(needs `read_reports` scope) in site config:
+pulls from Shopify via ShopifyQL. **No setup needed** — it reuses the credentials
+from the existing ERPNext Shopify integration (`Shopify Setting` single: the
+`shopify_url` + the `password` access token, decrypted server-side).
 
-```bash
-bench --site admin.justyol.com set-config shopify_domain "9db8fb-e0.myshopify.com"
-bench --site admin.justyol.com set-config shopify_token "shpat_xxx"
-```
+The only requirement: that token must have the **`read_reports`** scope (ShopifyQL
+analytics). The sync app usually has order/product/inventory scopes but not
+reports. If the card shows "connect Shopify":
+1. Add `read_reports` to the Shopify custom app and re-install/refresh the token, **or**
+2. Point at a token that has it, via config (takes precedence is NOT given — the
+   Shopify Setting is tried first; to force config, disable `enable_shopify` or
+   clear its token):
+   ```bash
+   bench --site admin.justyol.com set-config shopify_domain "9db8fb-e0.myshopify.com"
+   bench --site admin.justyol.com set-config shopify_token "shpat_xxx"
+   ```
 
-Until set, the card shows a "connect Shopify" prompt (nothing breaks). Everything
-else (cash, profit, products, orders, …) is ERPNext-only and needs no extra config.
+Nothing else breaks if it's not set — the card just shows the prompt. Everything
+else (cash, profit, products, orders, …) is ERPNext-only and needs no config.
 
 ## 6. Finance figures — how they're scoped
 
