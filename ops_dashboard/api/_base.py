@@ -43,22 +43,25 @@ REF_PREFIXES = ("CATH", "RDF")
 #   YC-…  YouCan store                SAL-…  agent / manual entry
 # These four cover 100% of orders (custom_channel is only filled for
 # YouCan/Landing, so the name prefix is the reliable classifier).
-SOURCE_CASE = (
-    "CASE WHEN so.name LIKE '#%%' THEN 'shopify' "
-    "WHEN so.name LIKE 'YC-%%' THEN 'youcan' "
-    "WHEN so.name LIKE 'J-%%' THEN 'landing' "
-    "WHEN so.name LIKE 'SAL-%%' THEN 'agent' "
-    "ELSE 'other' END"
-)
+# Uses LEFT(name,n)=prefix, NOT LIKE 'prefix%': a LIKE pattern with a literal '%'
+# inside an f-string SQL that is ALSO passed a params dict gets mangled by the
+# driver's %-escaping (the '#%%' collapsed wrong and matched every row → the
+# whole store read as 100% Shopify). LEFT() has no '%' so it's escape-proof.
 SOURCE_PREFIX = {"shopify": "#", "youcan": "YC-", "landing": "J-", "agent": "SAL-"}
 SOURCES = ("shopify", "youcan", "landing", "agent")
+SOURCE_CASE = (
+    "CASE "
+    + " ".join(f"WHEN LEFT(so.name,{len(p)})='{p}' THEN '{s}'" for s, p in SOURCE_PREFIX.items())
+    + " ELSE 'other' END"
+)
 
 
 def source_cond(source, params):
     """WHERE fragment scoping to one source (by name prefix)."""
     if source and source in SOURCE_PREFIX:
-        params["src_prefix"] = SOURCE_PREFIX[source] + "%"
-        return " AND so.name LIKE %(src_prefix)s"
+        p = SOURCE_PREFIX[source]
+        params["src_prefix"] = p
+        return f" AND LEFT(so.name, {len(p)}) = %(src_prefix)s"
     return ""
 
 
