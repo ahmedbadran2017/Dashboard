@@ -67,7 +67,7 @@ import { n, signed, initials } from "@/lib/format";
 const i18n = useI18n();
 const route = useRoute();
 const router = useRouter();
-const { period, refreshNonce } = useDashboard();
+const { periodKey, periodParams, refreshNonce } = useDashboard();
 
 const deptId = computed(() => route.params.id);
 const meta = computed(() => DEPT_META[deptId.value] || { name: [deptId.value, deptId.value], icon: "box", accent: "orange" });
@@ -82,10 +82,10 @@ const acc = computed(() => ACCENT[meta.value.accent] || ACCENT.orange);
 const res = createResource({ url: "ops_dashboard.api.departments.department_detail" });
 const d = computed(() => res.data || {});
 
-function load() { res.fetch({ dept: deptId.value, period: period.value }); }
+function load() { res.fetch({ dept: deptId.value, ...periodParams() }); }
 load();
 watch(() => route.params.id, load);
-watch(period, load);
+watch(periodKey, load);
 watch(refreshNonce, load);
 
 const bars = computed(() => {

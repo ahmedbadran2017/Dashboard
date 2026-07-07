@@ -158,7 +158,7 @@ import { n, money, moneyFull, signed } from "@/lib/format";
 
 const i18n = useI18n();
 const router = useRouter();
-const { period, refreshNonce } = useDashboard();
+const { period, refreshNonce, periodKey, periodParams } = useDashboard();
 
 const res = createResource({ url: "ops_dashboard.api.kpis.home" });
 const d = computed(() => res.data || {});
@@ -181,18 +181,19 @@ function countUp(from, to) {
 
 async function load() {
   const prev = shownOrdersNum.value;
-  srcRes.fetch({ period: period.value });
-  await res.fetch({ period: period.value });
+  srcRes.fetch(periodParams());
+  await res.fetch(periodParams());
   countUp(prev, d.value.orders || 0);
 }
 function reload() { load(); }
 
 load();
-watch(period, () => load());
+watch(periodKey, () => load());
 watch(refreshNonce, () => load());
 
 const deltaPos = computed(() => (d.value.orders_delta_pct || 0) >= 0);
-const cmpLabel = computed(() => ({ today: i18n.t("vsYesterday"), d7: i18n.t("vsLastWeek"), d30: i18n.t("vsLastMonth") }[period.value]));
+const cmpLabel = computed(() =>
+  ({ today: i18n.t("vsYesterday"), d7: i18n.t("vsLastWeek"), d30: i18n.t("vsLastMonth"), custom: i18n.t("vsPrevPeriod") }[period.value]));
 const nowTime = computed(() => new Date().toLocaleTimeString(i18n.isAr.value ? "ar-EG" : "en-US", { hour: "2-digit", minute: "2-digit" }));
 
 // week bars normalized 10–40px, today highlighted orange

@@ -190,7 +190,14 @@ const STATUS_COUNT = { today: { all: 156, new: 27, conf: 121, disp: 96, del: 29,
   d30: { all: 11480, new: 1870, conf: 8610, disp: 7995, del: 7580, ret: 1102 } };
 
 export async function demoResolve(method, params = {}) {
-  const p = params.period || "today";
+  let p = params.period || "today";
+  // custom range → nearest dataset by span (the real backend aggregates exactly)
+  if (params.from_date && params.to_date) {
+    const span = Math.round((new Date(params.to_date) - new Date(params.from_date)) / 86400000) + 1;
+    p = span <= 1 ? "today" : span <= 10 ? "d7" : "d30";
+  } else if (!HOME[p]) {
+    p = "today";
+  }
   const m = method.split(".").pop();
   await new Promise((r) => setTimeout(r, 90)); // small latency for realistic loaders
   switch (m) {

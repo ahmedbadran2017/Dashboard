@@ -53,14 +53,14 @@ import { n, money, signed } from "@/lib/format";
 
 const i18n = useI18n();
 const router = useRouter();
-const { period, refreshNonce } = useDashboard();
+const { periodKey, periodParams, refreshNonce } = useDashboard();
 
 const res = createResource({ url: "ops_dashboard.api.departments.list_departments" });
 const list = computed(() => res.data || []);
 
-function load() { res.fetch({ period: period.value }); }
+function load() { res.fetch(periodParams()); }
 load();
-watch(period, load);
+watch(periodKey, load);
 watch(refreshNonce, load);
 
 const ACCENT = {

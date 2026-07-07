@@ -90,7 +90,7 @@ import { useDashboard } from "@/composables/useDashboard";
 import { n } from "@/lib/format";
 
 const i18n = useI18n();
-const { period, refreshNonce } = useDashboard();
+const { periodKey, periodParams, refreshNonce } = useDashboard();
 
 const status = ref("all");
 const city = ref("all");
@@ -119,20 +119,20 @@ const res = createResource({ url: "ops_dashboard.api.orders.list_orders" });
 const rows = computed(() => res.data || []);
 
 function loadMeta() {
-  countsRes.fetch({ period: period.value, source: source.value === "all" ? null : source.value });
-  citiesRes.fetch({ period: period.value });
+  countsRes.fetch({ ...periodParams(), source: source.value === "all" ? null : source.value });
+  citiesRes.fetch(periodParams());
 }
 let searchTimer;
 function loadList() {
   clearTimeout(searchTimer);
   searchTimer = setTimeout(() => {
-    res.fetch({ period: period.value, status: status.value, city: city.value, search: query.value,
+    res.fetch({ ...periodParams(), status: status.value, city: city.value, search: query.value,
                 source: source.value === "all" ? null : source.value });
   }, query.value ? 220 : 0);
 }
 loadMeta();
 loadList();
-watch(period, () => { loadMeta(); loadList(); });
+watch(periodKey, () => { loadMeta(); loadList(); });
 watch(refreshNonce, () => { loadMeta(); loadList(); });
 watch([status, city, query], loadList);
 watch(source, () => { loadMeta(); loadList(); });

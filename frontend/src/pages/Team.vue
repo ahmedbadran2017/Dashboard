@@ -52,14 +52,14 @@ import { useDashboard } from "@/composables/useDashboard";
 import { n, initials } from "@/lib/format";
 
 const i18n = useI18n();
-const { period, refreshNonce } = useDashboard();
+const { periodKey, periodParams, refreshNonce } = useDashboard();
 
 const res = createResource({ url: "ops_dashboard.api.team.sections" });
 const sections = computed(() => res.data || []);
 
-function load() { res.fetch({ period: period.value }); }
+function load() { res.fetch(periodParams()); }
 load();
-watch(period, load);
+watch(periodKey, load);
 watch(refreshNonce, load);
 
 function sectionName(id) {
