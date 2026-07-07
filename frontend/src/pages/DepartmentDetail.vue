@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="lg:mx-auto lg:max-w-2xl">
     <button class="mb-3 flex items-center gap-1 text-[13px] font-bold" style="color: var(--jy-blue)" @click="router.back()">
       <Icon name="back" :size="15" :style="{ color: 'var(--jy-blue)', transform: i18n.isAr.value ? 'scaleX(-1)' : 'none' }" />
       {{ i18n.t("back") }}

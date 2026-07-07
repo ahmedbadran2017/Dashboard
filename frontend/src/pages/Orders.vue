@@ -52,9 +52,10 @@
     <div v-else-if="!rows.length" class="py-8 text-center text-sm" style="color: var(--jy-mute)">—</div>
 
     <!-- Order rows -->
+    <div class="lg:grid lg:grid-cols-2 lg:gap-2 xl:grid-cols-3">
     <button
       v-for="(o, i) in rows" :key="o.id"
-      class="card mb-2 flex w-full items-center gap-3 p-3 text-start anim-stagger"
+      class="card mb-2 flex w-full items-center gap-3 p-3 text-start anim-stagger lg:mb-0"
       :style="{ animationDelay: (Math.min(i, 10) * 40) + 'ms' }"
       @click="openOrder(o)"
     >
@@ -71,6 +72,7 @@
         <span class="pill px-2.5 py-0.5 text-[10px] font-bold" :style="{ background: ST[o.status].bg, color: ST[o.status].fg }">{{ ST[o.status].label }}</span>
       </div>
     </button>
+    </div>
 
     <!-- Detail sheet -->
     <Sheet v-model="sheetOpen">

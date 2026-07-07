@@ -5,9 +5,10 @@
     <div v-if="res.loading && !list.length" class="py-8 text-center text-sm" style="color: var(--jy-mute)">{{ i18n.t("loading") }}</div>
     <div v-else-if="!list.length" class="py-16 text-center text-sm" style="color: var(--jy-mute)">{{ i18n.t("noAlerts") }}</div>
 
+    <div class="lg:grid lg:grid-cols-2 lg:gap-3">
     <div
       v-for="(a, i) in cards" :key="i"
-      class="card mb-2.5 flex items-start gap-3 p-3.5 anim-stagger"
+      class="card mb-2.5 flex items-start gap-3 p-3.5 anim-stagger lg:mb-0"
       :style="{ animationDelay: (i * 45) + 'ms', borderInlineStartWidth: '3px', borderInlineStartColor: a.color }"
     >
       <div class="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-full" :style="{ background: a.bg }">
@@ -18,6 +19,7 @@
         <div class="mt-0.5 text-[11px]" style="color: var(--jy-mute)">{{ a.sub }}</div>
       </div>
       <span class="whitespace-nowrap text-[10px]" style="color: var(--jy-mute)">{{ a.time }}</span>
+    </div>
     </div>
   </div>
 </template>

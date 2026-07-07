@@ -7,9 +7,10 @@
 
     <div v-if="res.loading && !list.length" class="py-8 text-center text-sm" style="color: var(--jy-mute)">{{ i18n.t("loading") }}</div>
 
+    <div class="lg:grid lg:grid-cols-2 lg:gap-3 xl:grid-cols-3">
     <button
       v-for="(dp, i) in cards" :key="dp.id"
-      class="card mb-2.5 block w-full p-3.5 text-start anim-stagger"
+      class="card mb-2.5 block w-full p-3.5 text-start anim-stagger lg:mb-0"
       :style="{ animationDelay: (i * 45) + 'ms' }"
       @click="router.push('/ops/departments/' + dp.id)"
     >
@@ -37,6 +38,7 @@
         <span class="whitespace-nowrap text-[10px]" style="color: var(--jy-mute)">{{ dp.targetLabel }}</span>
       </div>
     </button>
+    </div>
   </div>
 </template>
 

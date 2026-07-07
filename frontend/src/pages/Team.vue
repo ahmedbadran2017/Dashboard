@@ -5,9 +5,10 @@
 
     <div v-if="res.loading && !sections.length" class="py-8 text-center text-sm" style="color: var(--jy-mute)">{{ i18n.t("loading") }}</div>
 
+    <div class="lg:grid lg:grid-cols-2 lg:items-start lg:gap-4 xl:grid-cols-3">
     <div
       v-for="(sec, si) in sections" :key="sec.id"
-      class="card mb-3 p-4 anim-stagger" :style="{ animationDelay: (si * 90) + 'ms' }"
+      class="card mb-3 p-4 anim-stagger lg:mb-0" :style="{ animationDelay: (si * 90) + 'ms' }"
     >
       <div class="mb-3 flex items-center justify-between">
         <span class="text-[13px] font-extrabold">{{ sectionName(sec.id) }}</span>
@@ -38,6 +39,7 @@
           <div class="text-[11px]" style="color: var(--jy-mute)">{{ i18n.t("needsSourceSub") }}</div>
         </div>
       </div>
+    </div>
     </div>
   </div>
 </template>

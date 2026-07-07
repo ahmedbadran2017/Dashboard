@@ -1,7 +1,8 @@
 <template>
-  <div>
+  <!-- desktop: flow the cards into 2 columns; controls + hero span both -->
+  <div class="lg:[column-count:2] lg:gap-x-4">
     <!-- Trust line -->
-    <div class="mb-3 flex items-center justify-between">
+    <div class="mb-3 flex items-center justify-between lg:[column-span:all]">
       <div class="flex items-center gap-1.5">
         <span class="inline-block h-1.5 w-1.5 rounded-full" style="background: var(--jy-green)" />
         <span class="text-[11px] whitespace-nowrap" style="color: var(--jy-mute)">{{ i18n.t("live") }} · <span class="num">{{ nowTime }}</span></span>
@@ -12,10 +13,10 @@
     </div>
 
     <!-- Period segmented control -->
-    <PeriodTabs class="mb-3" />
+    <PeriodTabs class="mb-3 lg:[column-span:all]" />
 
     <!-- Hero KPI card -->
-    <div class="mb-3 p-[18px]" style="background: #1a1a1a; border: 1px solid rgba(255,255,255,0.09); border-radius: 18px">
+    <div class="mb-3 p-[18px] lg:[column-span:all]" style="background: #1a1a1a; border: 1px solid rgba(255,255,255,0.09); border-radius: 18px">
       <div class="flex items-start justify-between">
         <div>
           <div class="text-[12px]" style="color: rgba(255,255,255,0.6)">{{ i18n.t("orders") }}</div>
@@ -49,11 +50,11 @@
     </div>
 
     <!-- Loading / error -->
-    <div v-if="res.loading && !d.orders" class="py-8 text-center text-sm" style="color: var(--jy-mute)">{{ i18n.t("loading") }}</div>
+    <div v-if="res.loading && !d.orders" class="py-8 text-center text-sm lg:[column-span:all]" style="color: var(--jy-mute)">{{ i18n.t("loading") }}</div>
 
     <template v-if="d.orders !== undefined">
       <!-- Order funnel -->
-      <div class="card mb-3 p-4">
+      <div class="card mb-3 p-4 lg:break-inside-avoid">
         <div class="mb-3 text-[13px] font-extrabold">{{ i18n.t("funnelTitle") }}</div>
         <div v-for="(f, i) in funnel" :key="f.key" class="mb-2.5 flex items-center gap-2 last:mb-0">
           <span class="w-[74px] shrink-0 text-[12px]" style="color: var(--jy-text-2)">{{ f.label }}</span>
@@ -65,7 +66,7 @@
       </div>
 
       <!-- Order sources -->
-      <div class="card mb-3 p-4">
+      <div class="card mb-3 p-4 lg:break-inside-avoid">
         <div class="mb-3 text-[13px] font-extrabold">{{ i18n.t("sourcesTitle") }}</div>
         <div v-for="(s, i) in sourceRows" :key="s.id" class="mb-3 last:mb-0">
           <div class="flex items-center gap-2">
@@ -86,7 +87,7 @@
       </div>
 
       <!-- Rate cards 2x2 -->
-      <div class="mb-3 grid grid-cols-2 gap-2.5">
+      <div class="mb-3 grid grid-cols-2 gap-2.5 lg:break-inside-avoid">
         <div v-for="(r, i) in rateCards" :key="r.key" class="card p-3 anim-stagger" :style="{ animationDelay: (i * 60) + 'ms' }">
           <div class="mb-2 grid h-[22px] w-[22px] place-items-center rounded-[7px]" :style="{ background: r.iconBg }">
             <Icon :name="r.icon" :size="12" :style="{ color: r.iconColor }" />
@@ -98,7 +99,7 @@
       </div>
 
       <!-- COD -->
-      <div class="card mb-3 p-4">
+      <div class="card mb-3 p-4 lg:break-inside-avoid">
         <div class="mb-3 flex items-center justify-between">
           <span class="text-[13px] font-extrabold">{{ i18n.t("codTitle") }}</span>
           <span class="pill px-2 py-0.5 text-[10px] font-bold" style="background: var(--jy-green-tint); color: var(--jy-green)">Cathedis</span>
@@ -117,7 +118,7 @@
 
       <!-- Late orders strip -->
       <button
-        class="mb-3 flex w-full items-center gap-3 rounded-[14px] p-3.5 text-start"
+        class="mb-3 flex w-full items-center gap-3 rounded-[14px] p-3.5 text-start lg:break-inside-avoid"
         style="background: var(--jy-red-tint); border: 1px solid rgba(196,48,28,0.18)"
         @click="router.push('/ops/alerts')"
       >
@@ -130,7 +131,7 @@
       </button>
 
       <!-- Daily report -->
-      <div class="card mb-2 p-4">
+      <div class="card mb-2 p-4 lg:mb-0 lg:break-inside-avoid">
         <div class="text-[13px] font-extrabold">{{ i18n.t("reportTitle") }}</div>
         <div class="mb-3 mt-0.5 text-[11px]" style="color: var(--jy-mute)">{{ i18n.t("reportSub") }}</div>
         <div class="grid grid-cols-2 gap-2.5">
