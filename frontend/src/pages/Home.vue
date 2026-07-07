@@ -53,6 +53,25 @@
     <div v-if="res.loading && !d.orders" class="py-8 text-center text-sm lg:[column-span:all]" style="color: var(--jy-mute)">{{ i18n.t("loading") }}</div>
 
     <template v-if="d.orders !== undefined">
+      <!-- Storefront funnel (Shopify) — top of the funnel above the order funnel -->
+      <div v-if="storefront.needs_config" class="card mb-3 flex items-center gap-2 p-3.5 lg:[column-span:all]" style="background: var(--jy-bg-2)">
+        <Icon name="info" :size="16" style="color: var(--jy-mute)" />
+        <span class="text-[12px]" style="color: var(--jy-mute)">{{ i18n.t("connectShopify") }}</span>
+      </div>
+      <div v-else-if="storefront.sessions" class="card mb-3 p-4 lg:[column-span:all]">
+        <div class="mb-3 flex items-center justify-between">
+          <span class="text-[13px] font-extrabold">{{ i18n.t("storefrontTitle") }}</span>
+          <span class="num text-[13px] font-extrabold" style="color: var(--jy-orange)">{{ storefront.conversion }}% <span class="text-[10px] font-normal" style="color: var(--jy-mute)">{{ i18n.t("conversionRate") }}</span></span>
+        </div>
+        <div class="grid grid-cols-3 gap-2">
+          <div v-for="s in storeSteps" :key="s.key" class="rounded-[10px] p-2.5" style="background: var(--jy-bg-2)">
+            <div class="text-[10px]" style="color: var(--jy-mute)">{{ s.label }}</div>
+            <div class="num text-[18px] font-extrabold">{{ money(s.value) }}</div>
+            <div v-if="s.rate" class="num text-[10px] font-bold" style="color: var(--jy-mute)">{{ s.rate }}%</div>
+          </div>
+        </div>
+      </div>
+
       <!-- Order funnel -->
       <div class="card mb-3 p-4 lg:break-inside-avoid">
         <div class="mb-3 text-[13px] font-extrabold">{{ i18n.t("funnelTitle") }}</div>
@@ -83,6 +102,28 @@
             </div>
             <span class="num whitespace-nowrap text-[10px] font-bold" :style="{ color: s.confColor }">{{ s.conf_rate }}% {{ i18n.t("confShort") }}</span>
           </div>
+        </div>
+      </div>
+
+      <!-- Top products -->
+      <div v-if="topProducts.length" class="card mb-3 p-4 lg:break-inside-avoid">
+        <div class="mb-3 text-[13px] font-extrabold">{{ i18n.t("topProductsTitle") }}</div>
+        <div v-for="(p, i) in topProducts" :key="p.item_code" class="mb-2.5 flex items-center gap-2 last:mb-0">
+          <span class="num w-4 shrink-0 text-[12px] font-extrabold" :style="{ color: i === 0 ? 'var(--jy-orange)' : 'var(--jy-mute-2)' }">{{ i + 1 }}</span>
+          <span class="min-w-0 flex-1 truncate text-[12px]" style="color: var(--jy-text-2)">{{ p.name }}</span>
+          <span class="num shrink-0 text-[12px] font-extrabold">{{ n(p.qty) }}</span>
+          <span class="num w-14 shrink-0 text-end text-[11px]" style="color: var(--jy-mute)">{{ money(p.value) }}</span>
+        </div>
+      </div>
+
+      <!-- Low stock (best-sellers running out) -->
+      <div v-if="lowStock.length" class="card mb-3 p-4 lg:break-inside-avoid" style="border-inline-start: 3px solid var(--jy-orange)">
+        <div class="text-[13px] font-extrabold">{{ i18n.t("lowStockTitle") }}</div>
+        <div class="mb-3 mt-0.5 text-[11px]" style="color: var(--jy-mute)">{{ i18n.t("lowStockSub") }}</div>
+        <div v-for="p in lowStock" :key="p.item_code" class="mb-2 flex items-center gap-2 last:mb-0">
+          <span class="min-w-0 flex-1 truncate text-[12px]" style="color: var(--jy-text-2)">{{ p.name }}</span>
+          <span class="num shrink-0 text-[11px]" style="color: var(--jy-mute)">{{ n(p.sold) }} {{ i18n.t("unitsSold") }}</span>
+          <span class="num shrink-0 pill px-2 py-0.5 text-[11px] font-extrabold" style="background: var(--jy-orange-soft); color: var(--jy-orange-ink)">{{ n(p.qty) }} {{ i18n.t("left") }}</span>
         </div>
       </div>
 
@@ -164,6 +205,20 @@ const { period, refreshNonce, periodKey, periodParams } = useDashboard();
 const res = createResource({ url: "ops_dashboard.api.kpis.home" });
 const d = computed(() => res.data || {});
 const srcRes = createResource({ url: "ops_dashboard.api.kpis.sources" });
+const storeRes = createResource({ url: "ops_dashboard.api.business.storefront" });
+const productsRes = createResource({ url: "ops_dashboard.api.business.top_products" });
+const lowStockRes = createResource({ url: "ops_dashboard.api.business.low_stock", initial: [] });
+const storefront = computed(() => storeRes.data || {});
+const topProducts = computed(() => productsRes.data || []);
+const lowStock = computed(() => lowStockRes.data || []);
+const storeSteps = computed(() => {
+  const s = storefront.value;
+  return [
+    { key: "visits", label: i18n.t("visits"), value: s.sessions, rate: null },
+    { key: "cart", label: i18n.t("addedToCart"), value: s.carts, rate: s.cart_rate },
+    { key: "checkout", label: i18n.t("reachedCheckout"), value: s.checkouts, rate: s.checkout_rate },
+  ];
+});
 
 // count-up animation for the hero number
 const shownOrdersNum = ref(0);
@@ -183,6 +238,9 @@ function countUp(from, to) {
 async function load() {
   const prev = shownOrdersNum.value;
   srcRes.fetch(periodParams());
+  storeRes.fetch(periodParams());
+  productsRes.fetch(periodParams());
+  lowStockRes.fetch();
   await res.fetch(periodParams());
   countUp(prev, d.value.orders || 0);
 }

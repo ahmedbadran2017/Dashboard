@@ -6,6 +6,7 @@ import Departments from "@/pages/Departments.vue";
 import DepartmentDetail from "@/pages/DepartmentDetail.vue";
 import Orders from "@/pages/Orders.vue";
 import Team from "@/pages/Team.vue";
+import Finance from "@/pages/Finance.vue";
 import Alerts from "@/pages/Alerts.vue";
 
 const routes = [
@@ -19,6 +20,7 @@ const routes = [
       { path: "departments/:id", name: "DepartmentDetail", component: DepartmentDetail, props: true, meta: { tab: "depts" } },
       { path: "orders", name: "Orders", component: Orders, meta: { tab: "orders" } },
       { path: "team", name: "Team", component: Team, meta: { tab: "team" } },
+      { path: "finance", name: "Finance", component: Finance, meta: { tab: "finance" } },
       { path: "alerts", name: "Alerts", component: Alerts, meta: { tab: "alerts" } },
     ],
   },

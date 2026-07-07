@@ -66,7 +66,32 @@ role check there — one line.
 - After deploying a new bundle, the SW picks it up on the next open (its
   VERSION string busts old caches; hard-refresh once if an old shell lingers).
 
-## 5. What's live vs. placeholder
+## 5. Connect Shopify (storefront traffic + conversion)
+
+The Home "Storefront traffic" card (sessions → cart → checkout → conversion)
+pulls from Shopify via ShopifyQL. Set the store domain + an Admin API token
+(needs `read_reports` scope) in site config:
+
+```bash
+bench --site admin.justyol.com set-config shopify_domain "9db8fb-e0.myshopify.com"
+bench --site admin.justyol.com set-config shopify_token "shpat_xxx"
+```
+
+Until set, the card shows a "connect Shopify" prompt (nothing breaks). Everything
+else (cash, profit, products, orders, …) is ERPNext-only and needs no extra config.
+
+## 6. Finance figures — how they're scoped
+
+- **Cash available** sums only positive bank balances (accounts that hold money);
+  loans/overdrafts/FX accounts are also `account_type=Bank` and would drag a naive
+  total negative. Carrier float ("… Transactions" accounts) is shown separately.
+- **Profitability** is a **trailing 30 days** for the operating company
+  (`Justyol Morocco` — edit `OPERATING_COMPANY` in `api/business.py`). It is NOT
+  "this calendar month" on purpose: invoice/GL posting lags, so a month-to-date
+  P&L reads near-zero early in the month. The live *today* revenue signal stays the
+  Sales-Order value on Home.
+
+## 7. What's live vs. placeholder
 
 Live from `tabSales Order`: orders, sales value, funnel, confirmation/delivery/
 return rates, AOV, COD collected-vs-pending (CATH/RDF refs), stuck>48h, cities,

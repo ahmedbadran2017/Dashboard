@@ -128,6 +128,7 @@ const tabs = computed(() => [
   { id: "depts", to: "/ops/departments", icon: "depts", label: i18n.isAr.value ? "الأقسام" : "Departments" },
   { id: "orders", to: "/ops/orders", icon: "orders", label: i18n.isAr.value ? "الأوردرات" : "Orders" },
   { id: "team", to: "/ops/team", icon: "team", label: i18n.isAr.value ? "الفريق" : "Team" },
+  { id: "finance", to: "/ops/finance", icon: "cash", label: i18n.isAr.value ? "المالية" : "Finance" },
   { id: "alerts", to: "/ops/alerts", icon: "alerts", label: i18n.isAr.value ? "التنبيهات" : "Alerts" },
 ]);
 

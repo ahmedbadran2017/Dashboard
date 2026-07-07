@@ -231,6 +231,51 @@ const STATUS_COUNT = { today: { all: 156, new: 27, conf: 121, disp: 96, del: 29,
   d7: { all: 2612, new: 420, conf: 1985, disp: 1812, del: 1244, ret: 238 },
   d30: { all: 11480, new: 1870, conf: 8610, disp: 7995, del: 7580, ret: 1102 } };
 
+// ── Business metrics (real numbers from the 2026-07-07 pull) ──
+const STOREFRONT = {
+  today: { needs_config: false, sessions: 20800, carts: 802, checkouts: 229, conversion: 0.75, cart_rate: 3.9, checkout_rate: 1.1 },
+  d7: { needs_config: false, sessions: 145709, carts: 5617, checkouts: 1602, conversion: 0.41, cart_rate: 3.9, checkout_rate: 1.1 },
+  d30: { needs_config: false, sessions: 612000, carts: 23800, checkouts: 6800, conversion: 0.44, cart_rate: 3.9, checkout_rate: 1.1 },
+};
+const TOP_PRODUCTS = [
+  { item_code: "SPICE12-GRY", name: "Set de 12 pots à épices avec support - Gris", qty: 185, value: 29611 },
+  { item_code: "JAR12-1700", name: "Set de 12 bocaux carrés de conservation 1700 ml", qty: 183, value: 28671 },
+  { item_code: "BOX4-6L", name: "Set de 4 boîtes de rangement 6 L", qty: 171, value: 20498 },
+  { item_code: "CONT12-1205", name: "Set de 12 contenants carrés 1205 ml noirs", qty: 170, value: 20332 },
+  { item_code: "SPICE12-ANT", name: "Set de 12 pots à épices anthracite 555 ml", qty: 155, value: 12716 },
+  { item_code: "OIL2-750", name: "Set de 2 bouteilles d'huile 750 ml + support bois", qty: 64, value: 5895 },
+];
+const LOW_STOCK = [
+  { item_code: "MCH100013-box", name: "MCH100013-box", qty: 10, sold: 66 },
+  { item_code: "MAG360", name: "Magnésium bisglycinate 360 mg - 60 gélules", qty: 15, sold: 62 },
+  { item_code: "TERLIK-39", name: "Chaussons Orthopédiques Unisexes - Vison / 39", qty: 26, sold: 51 },
+  { item_code: "TERLIK-36", name: "Chaussons Orthopédiques Unisexes - Vison / 36", qty: 13, sold: 42 },
+  { item_code: "SAC-MOODS", name: "Sac Bandoulière Femme MOODS - Brown", qty: 30, sold: 41 },
+];
+const CASH = {
+  currency: "MAD", bank_total: 1173364, carrier_float: 453133, card_total: 662400,
+  total: 2288897,
+  accounts: [
+    { name: "BMCE-…130355", bal: 918294, kind: "bank" },
+    { name: "Kuveyttürk Credit Card …7778", bal: 476619, kind: "card" },
+    { name: "Cathedis Transactions", bal: 453133, kind: "carrier" },
+    { name: "Credit Card …332506", bal: 160000, kind: "card" },
+    { name: "CIH-…950128", bal: 93535, kind: "bank" },
+    { name: "Petty Cash", bal: 68550, kind: "bank" },
+  ],
+};
+const PROFIT = {
+  currency: "MAD", company: "Justyol Morocco", window: "30d",
+  revenue: 396037, cogs: 185398, opex: 7246, gross: 210639, net: 203393, margin: 53.2,
+  top_expenses: [
+    { name: "Cost of Goods Sold", amount: 185398 },
+    { name: "Mix Digital Marketing", amount: 7000 },
+    { name: "Depreciation", amount: 217 },
+    { name: "Round Off", amount: 29 },
+  ],
+  supplier_payable: 22103812,
+};
+
 export async function demoResolve(method, params = {}) {
   let p = params.period || "today";
   // custom range → nearest dataset by span (the real backend aggregates exactly)
@@ -290,6 +335,16 @@ export async function demoResolve(method, params = {}) {
       return ALERTS;
     case "badge_count":
       return ALERTS.length;
+    case "storefront":
+      return STOREFRONT[p] || STOREFRONT.d7;
+    case "top_products":
+      return TOP_PRODUCTS;
+    case "low_stock":
+      return LOW_STOCK;
+    case "cash":
+      return CASH;
+    case "profit":
+      return PROFIT;
     default:
       return null;
   }
