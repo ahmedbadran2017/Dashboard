@@ -1,0 +1,16 @@
+include MANIFEST.in
+include requirements.txt
+include *.json
+include *.md
+include *.py
+include *.txt
+recursive-include ops_dashboard *.css
+recursive-include ops_dashboard *.html
+recursive-include ops_dashboard *.ico
+recursive-include ops_dashboard *.js
+recursive-include ops_dashboard *.json
+recursive-include ops_dashboard *.png
+recursive-include ops_dashboard *.svg
+recursive-include ops_dashboard *.webmanifest
+recursive-include ops_dashboard *.py
+recursive-exclude ops_dashboard *.pyc

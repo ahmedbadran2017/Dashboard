@@ -1,0 +1,31 @@
+{%- block head %}
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#131417" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Justyol Ops">
+<link rel="manifest" href="/assets/ops_dashboard/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/assets/ops_dashboard/icons/icon-192.png">
+<title>Justyol Ops Dashboard</title>
+{{ include_style("ops_dashboard.bundle.css") }}
+{%- endblock %}
+
+{%- block page_content %}
+<div id="app"></div>
+{%- endblock %}
+
+{%- block script %}
+<script>
+  // Register the service worker for offline shell + installability.
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("/assets/ops_dashboard/sw.js", { scope: "/ops/" })
+        .catch(function (e) { console.warn("SW registration failed", e); });
+    });
+  }
+</script>
+{{ include_script("ops_dashboard.bundle.js") }}
+{%- endblock %}
