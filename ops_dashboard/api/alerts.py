@@ -14,6 +14,12 @@ from ops_dashboard.api.kpis import _cod, _late
 @frappe.whitelist()
 def list_alerts(company=None):
     B.assert_access()
+    # Cached briefly (busted when an order changes): the bell badge fetches this
+    # on every app load, and each alert is its own aggregate scan of tabSales Order.
+    return B.cached(f"ops_alerts:{company or ''}", lambda: _build_alerts(company))
+
+
+def _build_alerts(company=None):
     out = []
 
     # 1. Orders stuck in dispatch > 48h (red)

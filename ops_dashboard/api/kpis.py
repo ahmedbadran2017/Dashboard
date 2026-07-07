@@ -19,7 +19,9 @@ def _agg(start, end, company):
         f"""
         SELECT
           COUNT(*)                                                     AS orders,
-          ROUND(SUM(so.grand_total))                                   AS value,
+          -- sales value counts only REAL demand (excludes Cancelled/Duplicated),
+          -- so it agrees with the rate denominators and AOV below
+          ROUND(SUM(CASE WHEN {B.IS_REAL} THEN so.grand_total ELSE 0 END)) AS value,
           SUM({B.IS_REAL})                                             AS real_orders,
           SUM(CASE WHEN {B.IS_CONFIRMED} THEN 1 ELSE 0 END)            AS confirmed,
           SUM(CASE WHEN {B.IS_DISPATCHED} THEN 1 ELSE 0 END)           AS dispatched,
@@ -64,22 +66,36 @@ def _week_bars(company):
 
 
 def _cod(company):
-    """Collected (carrier remitted — CATH/RDF ref present) vs pending at courier
-    (delivered, not yet collected), current fiscal year. Ported from accounting."""
+    """Collected (carrier remitted) vs pending at courier (delivered, not yet
+    collected), current fiscal year. Ported from accounting_portal/api/cod.py.
+
+    "Collected" = a carrier remittance ref (CATH…/RDF…) is present on the Sales
+    Order OR on its Sales Invoice. The invoice side is essential: the book's
+    matching process stamps the INVOICE (tens of thousands of orders), while the
+    portal's reconcile stamps the order — counting only the order ref (the
+    original port) undercounts collected and inflates pending. docstatus<2 on the
+    invoice: a ref stamped on a still-draft invoice already means collected."""
     params = {}
     comp = B.company_cond(company, params)
+    # Orders whose collecting ref lives on their Sales Invoice.
+    inv_join = (
+        "LEFT JOIN (SELECT sii.sales_order so "
+        "FROM `tabSales Invoice Item` sii JOIN `tabSales Invoice` si ON si.name = sii.parent "
+        f"WHERE si.docstatus < 2 AND {B.ref_present('si.custom_reference_number')} "
+        "AND IFNULL(sii.sales_order,'') != '' GROUP BY sii.sales_order) inv ON inv.so = so.name"
+    )
+    collected = "(" + B.ref_present("so.custom_reference_number") + " OR inv.so IS NOT NULL)"
+    notcoll = "(" + B.ref_absent("so.custom_reference_number") + " AND inv.so IS NULL)"
     row = frappe.db.sql(
         f"""
         SELECT
-          ROUND(SUM(CASE WHEN {B.ref_present('so.custom_reference_number')}
-                         THEN so.grand_total ELSE 0 END))                        AS collected,
-          ROUND(SUM(CASE WHEN {B.ref_absent('so.custom_reference_number')}
-                          AND {B.IS_DELIVERED} THEN so.grand_total ELSE 0 END))  AS pending,
-          ROUND(SUM(CASE WHEN {B.ref_absent('so.custom_reference_number')}
-                          AND {B.IS_DELIVERED}
+          ROUND(SUM(CASE WHEN {collected} THEN so.grand_total ELSE 0 END))       AS collected,
+          ROUND(SUM(CASE WHEN {notcoll} AND {B.IS_DELIVERED}
+                         THEN so.grand_total ELSE 0 END))                        AS pending,
+          ROUND(SUM(CASE WHEN {notcoll} AND {B.IS_DELIVERED}
                           AND DATEDIFF(CURDATE(), so.transaction_date) > 7
                          THEN so.grand_total ELSE 0 END))                        AS overdue
-        FROM `tabSales Order` so
+        FROM `tabSales Order` so {inv_join}
         WHERE so.docstatus = 1 AND {B.IS_REAL}
           AND so.transaction_date >= MAKEDATE(YEAR(CURDATE()), 1){comp}
         """,
@@ -175,8 +191,9 @@ def home(period="today", company=None, from_date=None, to_date=None):
         deliv_prev = _rate(prev["delivered"], prev["dispatched"])
         ret = _rate(cur["returned"], cur["real_orders"])
         ret_prev = _rate(prev["returned"], prev["real_orders"])
-        aov = round(cur["value"] / cur["orders"]) if cur["orders"] else 0
-        aov_prev = round(prev["value"] / prev["orders"]) if prev["orders"] else 0
+        # AOV over real orders, matching the real-only sales value
+        aov = round(cur["value"] / cur["real_orders"]) if cur["real_orders"] else 0
+        aov_prev = round(prev["value"] / prev["real_orders"]) if prev["real_orders"] else 0
 
         def delta(a, b):
             return round(a - b, 1)

@@ -1,16 +1,23 @@
 // Live snapshot for standalone preview (no Frappe bench reachable).
 //
-// In production the SPA is served by Frappe, which injects `window.csrf_token`;
-// there we hit the real whitelisted endpoints. In standalone Vite dev that global
-// is absent, so we answer from this snapshot — numbers taken from the live ERPNext
-// pull on 2026-07-07 (156 orders today, 244k total, etc.) plus the design dataset,
-// so the preview is faithful. Set window.__OPS_LIVE__=true to force real calls,
-// or window.__OPS_DEMO__=true to force the snapshot.
+// Numbers taken from the live ERPNext pull on 2026-07-07 (156 orders today, 244k
+// total, etc.) plus the design dataset, so the preview is faithful.
+//
+// DEFAULT IS LIVE. The snapshot is only reachable from a standalone Vite dev
+// build (import.meta.env.DEV) with no Frappe session — the production bundle
+// (import.meta.env.DEV === false, dead-code-eliminated) can NEVER fall into demo
+// mode by accident, so real users always hit the real endpoints. Escape hatches:
+//   window.__OPS_DEMO__ = true  → force the snapshot (e.g. demoing in prod)
+//   window.__OPS_LIVE__ = true  → force real calls (e.g. dev proxied to a bench)
 export function isDemo() {
   if (typeof window === "undefined") return false;
   if (window.__OPS_LIVE__ === true) return false;
   if (window.__OPS_DEMO__ === true) return true;
-  return !window.csrf_token; // no Frappe session → snapshot
+  return !!import.meta.env.DEV && !hasFrappeSession();
+}
+
+function hasFrappeSession() {
+  return typeof window !== "undefined" && !!(window.csrf_token || window.frappe?.csrf_token);
 }
 
 const HOME = {
@@ -149,6 +156,41 @@ const DEPTS = {
   },
 };
 
+// Build a plausible detail for ANY department (the standalone preview used to
+// show Confirmation's data for every dept). Mirrors the backend's per-dept shape.
+function genDetail(deptId) {
+  const statsByDept = {
+    conf: [
+      { l: "confirmed_today", v: 121, d: 11 }, { l: "awaiting", v: 27, d: null },
+      { l: "rate", v: 78, unit: "%", d: null }, { l: "total", v: 156, d: 14 },
+    ],
+    del: [
+      { l: "delivered_today", v: 29, d: 4 }, { l: "dispatched", v: 96, d: null },
+      { l: "rate", v: 71, unit: "%", d: null }, { l: "returned", v: 34, d: null },
+    ],
+    ret: [
+      { l: "returned", v: 34, d: 5 }, { l: "rate", v: 9.4, unit: "%", d: null },
+      { l: "delivered", v: 29, d: null }, { l: "total", v: 156, d: null },
+    ],
+  };
+  const stats = statsByDept[deptId] || [
+    { l: "orders", v: 156, d: 14 }, { l: "confirmed", v: 121, d: null },
+    { l: "dispatched", v: 96, d: null }, { l: "delivered", v: 29, d: null },
+  ];
+  const barSeed = {
+    conf: [289, 301, 266, 322, 298, 292, 121], wh: [270, 288, 250, 305, 281, 279, 96],
+    disp: [255, 270, 240, 290, 262, 268, 96], del: [244, 262, 231, 280, 259, 251, 29],
+    ret: [31, 28, 35, 26, 30, 33, 12], cod: [52, 61, 47, 70, 58, 64, 41],
+    mkt: [26100, 28800, 25000, 30500, 28100, 27900, 29400],
+  };
+  const top = (DEPTS.detail[deptId] && DEPTS.detail[deptId].top) || [
+    { name: "الدار البيضاء", value: 74, pct: 90 },
+    { name: "الرباط", value: 71, pct: 84 },
+    { name: "مراكش", value: 63, pct: 70 },
+  ];
+  return { id: deptId, stats, bars: withDates(barSeed[deptId] || barSeed.conf), top };
+}
+
 const TEAM = [
   {
     id: "conf", metric: "confirmed", needs_source: false,
@@ -241,7 +283,7 @@ export async function demoResolve(method, params = {}) {
     case "list_departments":
       return DEPTS.list;
     case "department_detail":
-      return DEPTS.detail[params.dept] || DEPTS.detail.conf;
+      return genDetail(params.dept || "conf");
     case "sections":
       return TEAM;
     case "list_alerts":

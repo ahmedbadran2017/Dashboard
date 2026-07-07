@@ -6,7 +6,10 @@
 //   • API calls (/api/method/...) → network-first with a short cache fallback,
 //     so a flaky connection still shows the last known numbers (clearly stale).
 //   • Everything else → network, falling back to cache.
-const VERSION = "ops-v1";
+// Served from the SITE ROOT (Frappe www/ → /sw.js) so it can legally claim the
+// /ops/ scope. A worker served from /assets/... cannot control /ops/ without a
+// Service-Worker-Allowed header Frappe does not send, so registration would fail.
+const VERSION = "ops-v2";
 const SHELL_CACHE = `${VERSION}-shell`;
 const API_CACHE = `${VERSION}-api`;
 

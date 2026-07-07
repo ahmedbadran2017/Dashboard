@@ -150,9 +150,8 @@ def cached(key, builder):
 def bust_kpi_cache(doc=None, method=None):
     """doc_event hook: an order changed → drop the rollup caches."""
     try:
-        frappe.cache().delete_keys("ops_kpi:")
-        frappe.cache().delete_keys("ops_dept:")
-        frappe.cache().delete_keys("ops_team:")
+        for prefix in ("ops_kpi:", "ops_dept:", "ops_team:", "ops_alerts:"):
+            frappe.cache().delete_keys(prefix)
     except Exception:
         pass
 

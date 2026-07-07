@@ -20,9 +20,13 @@
 {%- block script %}
 <script>
   // Register the service worker for offline shell + installability.
+  // The worker is served from the site root (/sw.js via Frappe www/) so it can
+  // claim the /ops/ scope — a worker under /assets/ cannot without a header
+  // Frappe does not send. A registered SW is also what lets Chrome/Android fire
+  // the install prompt.
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", function () {
-      navigator.serviceWorker.register("/assets/ops_dashboard/sw.js", { scope: "/ops/" })
+      navigator.serviceWorker.register("/sw.js", { scope: "/ops/" })
         .catch(function (e) { console.warn("SW registration failed", e); });
     });
   }

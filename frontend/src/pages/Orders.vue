@@ -105,13 +105,15 @@ const SRC = {
   agent: { label: "Agent", color: "var(--jy-mute)" },
 };
 
+// computed (NOT .value) so the status pill labels re-translate on language toggle;
+// the template auto-unwraps ST when it indexes ST[o.status].
 const ST = computed(() => ({
   new: { label: i18n.t("sNew"), bg: "var(--jy-bg-2)", fg: "var(--jy-text-2)" },
   conf: { label: i18n.t("sConf"), bg: "var(--jy-orange-soft)", fg: "var(--jy-orange-ink)" },
   disp: { label: i18n.t("sDisp"), bg: "var(--jy-blue-tint)", fg: "var(--jy-blue)" },
   del: { label: i18n.t("sDel"), bg: "var(--jy-green-tint)", fg: "var(--jy-green)" },
   ret: { label: i18n.t("sRet"), bg: "var(--jy-red-tint)", fg: "var(--jy-red)" },
-})).value;
+}));
 
 const countsRes = createResource({ url: "ops_dashboard.api.orders.counts" });
 const citiesRes = createResource({ url: "ops_dashboard.api.orders.cities" });
