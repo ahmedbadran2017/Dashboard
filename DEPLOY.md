@@ -55,7 +55,11 @@ role check there — one line.
 ## 4. PWA notes
 
 - Served pages: `/ops/*` → `templates/pages/ops.html` hosts the SPA.
-- `manifest.webmanifest` + `sw.js` are served from `/assets/ops_dashboard/`.
+- `manifest.webmanifest` + icons are served from `/assets/ops_dashboard/`.
+- The service worker is served from the **site root** (`www/sw.js` → `/sw.js`)
+  so it can legally control the `/ops/` scope — a worker under `/assets/` cannot
+  without a `Service-Worker-Allowed` header Frappe doesn't send. This is also
+  what lets Chrome/Android show the install prompt.
 - The service worker caches the shell (instant offline open) and falls back to
   the **last known numbers** when the connection drops; it refreshes
   network-first when online.
