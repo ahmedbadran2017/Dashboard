@@ -19,8 +19,11 @@ bench restart                             # or: sudo supervisorctl restart all
 ```
 
 Then open **https://admin.justyol.com/ops/home** — log in with your ERPNext
-user. On the phone: open it in Safari/Chrome → **Add to Home Screen** → it
-installs as the Justyol Ops app (standalone, offline shell, orange icon).
+user. On the phone an **install banner** appears inside the app:
+- **Android/Chrome**: tap تثبيت → the native install dialog opens.
+- **iPhone/Safari**: Apple has no install API, so the banner shows the two
+  steps instead (Share → Add to Home Screen).
+The banner hides once installed (or after the user dismisses it).
 
 ## 2. Updating after changes
 

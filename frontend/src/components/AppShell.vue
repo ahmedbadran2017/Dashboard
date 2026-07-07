@@ -36,6 +36,9 @@
       </router-view>
     </main>
 
+    <!-- PWA install banner (Android: real prompt · iOS: add-to-home-screen how-to) -->
+    <InstallBanner />
+
     <!-- Bottom tab bar -->
     <nav
       class="fixed inset-x-0 bottom-0 z-30 mx-auto flex w-full max-w-[440px] justify-around"
@@ -57,6 +60,7 @@
 import { computed, ref, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import Icon from "@/components/Icon.vue";
+import InstallBanner from "@/components/InstallBanner.vue";
 import { useTheme } from "@/composables/useTheme";
 import { useI18n } from "@/i18n";
 import { createResource } from "@/lib/resource";

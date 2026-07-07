@@ -95,6 +95,12 @@ const STR = {
   noAlerts: ["مفيش تنبيهات دلوقتي 🎉", "No alerts right now 🎉"],
   hoursAgo: ["من {n} ساعة", "{n}h ago"],
   today2: ["النهارده", "Today"],
+  // install banner
+  installTitle: ["ثبّت الأب على موبايلك", "Install the app on your phone"],
+  installSub: ["شاشة كاملة، أسرع، ويشتغل أوفلاين", "Full screen, faster, works offline"],
+  installBtn: ["تثبيت", "Install"],
+  installIos1: ["دوس زرار المشاركة", "Tap the Share button"],
+  installIos2: ["وبعدين «Add to Home Screen»", "then “Add to Home Screen”"],
   // shared
   loading: ["بنحمّل…", "Loading…"],
   errorLoad: ["حصل خطأ في التحميل", "Couldn’t load"],
