@@ -191,7 +191,8 @@ export const DEPT_META = {
 };
 
 const STORAGE_KEY = "ops.lang";
-const lang = ref((typeof localStorage !== "undefined" && localStorage.getItem(STORAGE_KEY)) || "ar");
+// Default to English (LTR); a saved choice via the language pill still wins.
+const lang = ref((typeof localStorage !== "undefined" && localStorage.getItem(STORAGE_KEY)) || "en");
 
 export function useI18n() {
   const isAr = computed(() => lang.value === "ar");

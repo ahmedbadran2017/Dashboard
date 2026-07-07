@@ -8,8 +8,8 @@
   "orientation": "portrait",
   "background_color": "#131417",
   "theme_color": "#131417",
-  "lang": "ar",
-  "dir": "rtl",
+  "lang": "en",
+  "dir": "ltr",
   "categories": ["business", "productivity"],
   "icons": [
     { "src": "/assets/ops_dashboard/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
