@@ -107,7 +107,9 @@ def _cod(company):
 # How long after leaving the warehouse an order stops being "in transit" and
 # starts being a problem, and the point past which it is no longer a queue to
 # work but a record nobody ever closed.
-LATE_AFTER_DAYS = 2
+# Justyol's own delivery promise is 2-3 days, so a parcel is only overdue once
+# it has been out longer than that. Set from the operation, not from a guess.
+LATE_AFTER_DAYS = 3
 STALE_AFTER_DAYS = 30
 
 

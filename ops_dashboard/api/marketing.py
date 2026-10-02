@@ -13,7 +13,7 @@ in ERPNext), so it's the honest top-line number. Cost-per-order = spend ÷ order
 Spend rows in `JoyAgent Ad Spend`: {as_of: date, label: platform, spend, currency}.
 """
 import frappe
-from frappe.utils import flt, getdate
+from frappe.utils import add_days, flt, getdate, nowdate
 
 from ops_dashboard.api import _base as B
 from ops_dashboard.api.kpis import _agg
@@ -22,9 +22,27 @@ from ops_dashboard.api.kpis import _agg
 CHANNELS = {"meta": "meta", "facebook": "meta", "instagram": "meta",
             "tiktok": "tiktok", "google": "google", "google ads": "google"}
 
+# The trailing window the sync's `spend` figure covers (meta_ad_insights
+# .sync_ad_spend(period_days=30)). Keep in step with it.
+SPEND_WINDOW_DAYS = 30
 
-def _channel(label):
-    return CHANNELS.get((label or "").strip().lower(), "other")
+
+def _channel(label, ad_id=None):
+    """Canonical channel for a spend row.
+
+    The sync never writes `label` — every row on production has it empty — so
+    every dirham landed in "other" and the channel split read "Other 100%",
+    which says nothing. A Meta ad id is a long numeric string, and Meta is the
+    only platform wired up, so an unlabelled numeric id IS Meta. Labelled rows
+    still win, so naming a channel at the source keeps working.
+    """
+    c = CHANNELS.get((label or "").strip().lower())
+    if c:
+        return c
+    aid = str(ad_id or "").strip()
+    if aid.isdigit() and len(aid) >= 12:
+        return "meta"
+    return "other"
 
 
 @frappe.whitelist()
@@ -36,33 +54,52 @@ def overview(period="today", company=None, from_date=None, to_date=None):
 
     def build():
         start, end, ps, pe, _ = B.resolve_period(period, from_date, to_date)
+        # `JoyAgent Ad Spend` holds ONE ROW PER AD, and the sync overwrites
+        # `spend` with that ad's spend over its own trailing window (30 days by
+        # default) while stamping `as_of` with the DATE OF THE SYNC. There is no
+        # per-day spend anywhere in the schema.
+        #
+        # Filtering `as_of BETWEEN start AND end` therefore selects ads by when
+        # they were last synced, not when the money was spent, and summing
+        # `spend` adds up 30-day totals. On the "today" tab that produced a
+        # confident 11.5K spend, ROAS 4.39x and CPO 49 MAD out of the trailing
+        # totals of whichever three ads happened to sync this morning.
+        #
+        # Until the sync stores daily rows (Meta's insights API returns them with
+        # time_increment=1 — the real fix, and it belongs in supplier_portal),
+        # the only honest reading is the whole trailing window. So read every ad
+        # and say plainly which window it covers, instead of pretending the
+        # number belongs to the selected period.
         rows = frappe.db.sql(
-            """SELECT label, ROUND(SUM(spend)) spend FROM `tabJoyAgent Ad Spend`
-               WHERE as_of >= %(s)s AND as_of <= %(e)s GROUP BY label""",
-            {"s": str(start), "e": str(end)}, as_dict=True)
+            """SELECT ad_id, label, ROUND(SUM(spend)) spend FROM `tabJoyAgent Ad Spend`
+               GROUP BY ad_id, label""", as_dict=True)
         if not rows:
             return {"needs_config": True}
+        synced_on = frappe.db.sql(
+            "SELECT MAX(as_of) FROM `tabJoyAgent Ad Spend`")[0][0]
         by_channel = {}
         for r in rows:
-            c = _channel(r.label)
+            c = _channel(r.label, r.ad_id)
             by_channel[c] = by_channel.get(c, 0.0) + flt(r.spend)
         total_spend = sum(by_channel.values())
-        cur = _agg(start, end, company)
-        prev = _agg(ps, pe, company)
-        prev_spend = frappe.db.sql(
-            """SELECT ROUND(SUM(spend)) FROM `tabJoyAgent Ad Spend`
-               WHERE as_of >= %(s)s AND as_of <= %(e)s""",
-            {"s": str(ps), "e": str(pe)})[0][0] or 0
-        sales = flt(cur["value"])
-        orders = int(cur["orders"])
+        # Spend covers a trailing 30 days, so the revenue it is divided by has to
+        # cover the same 30 days or the ratio is meaningless. This is NOT the
+        # selected period, and the response says so.
+        win_start = getdate(add_days(getdate(nowdate()), -(SPEND_WINDOW_DAYS - 1)))
+        win = _agg(win_start, getdate(nowdate()), company)
+        sales = flt(win["value"])
+        orders = int(win["orders"])
         roas = round(sales / total_spend, 2) if total_spend else 0
-        prev_roas = round(flt(prev["value"]) / prev_spend, 2) if prev_spend else 0
         return {
             "needs_config": False, "currency": "MAD",
+            # The window these three numbers actually describe. The UI must show
+            # it: on the "today" tab they are not today's.
+            "window_days": SPEND_WINDOW_DAYS,
+            "synced_on": str(synced_on) if synced_on else None,
             "spend": total_spend,
             "sales": sales,
             "roas": roas,
-            "roas_delta": round(roas - prev_roas, 2),
+            "roas_delta": None,   # no per-day history to compare against yet
             "cpo": round(total_spend / orders) if orders else 0,
             "channels": [
                 {"id": c, "spend": by_channel[c],

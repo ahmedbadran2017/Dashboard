@@ -8,7 +8,7 @@ import frappe
 from frappe.utils import flt
 
 from ops_dashboard.api import _base as B
-from ops_dashboard.api.kpis import _agg, _cod, _rate, _week_bars
+from ops_dashboard.api.kpis import _agg, _cod, _quality, _rate, _week_bars
 
 # Daily targets per department (edit to retune; label is shown under the bar).
 TARGETS = {
@@ -43,10 +43,19 @@ def list_departments(period="today", company=None, from_date=None, to_date=None)
 
         conf = _rate(cur["confirmed"], cur["real_orders"])
         conf_prev = _rate(prev["confirmed"], prev["real_orders"])
-        deliv = _rate(cur["delivered"], cur["dispatched"])
-        deliv_prev = _rate(prev["delivered"], prev["dispatched"])
-        ret = _rate(cur["returned"], cur["real_orders"])
-        ret_prev = _rate(prev["returned"], prev["real_orders"])
+        # Delivery and return are LAGGING: delivery takes 2-3 days, so orders
+        # placed in the selected period have not had time to arrive. Scoped to
+        # the period they read ~0 against an 80% target, and the delivery card
+        # sat permanently red while the operation was fine. The home rate cards
+        # already solved this with a matured cohort (kpis._quality); the
+        # department cards now read the same numbers instead of contradicting
+        # them on the same screen.
+        q = _quality(company, 35, 5)
+        qp = _quality(company, 65, 35)
+        deliv = _rate(q["delivered"], q["dispatched"])
+        deliv_prev = _rate(qp["delivered"], qp["dispatched"])
+        ret = _rate(q["returned"], q["real_orders"])
+        ret_prev = _rate(qp["returned"], qp["real_orders"])
         aov = round(cur["value"] / cur["orders"]) if cur["orders"] else 0
 
         d = {
@@ -73,12 +82,17 @@ def list_departments(period="today", company=None, from_date=None, to_date=None)
                 "on_track": late <= max(10, 0.25 * (late + late_d["in_transit"])),
             },
             "del": {
-                "kpi": deliv, "kpi_unit": "%", "count": int(cur["delivered"]),
+                # `cohort` tells the UI this card is NOT on the selected period,
+                # so it can say so instead of looking like it disagrees with the
+                # order count sitting next to it.
+                "cohort": "d30_lagged", "kpi": deliv, "kpi_unit": "%",
+                "count": int(q["delivered"]),
                 "trend": round(deliv - deliv_prev, 1),
                 "target_pct": _clip(deliv / 80 * 100), "on_track": deliv >= 80,
             },
             "ret": {
-                "kpi": ret, "kpi_unit": "%", "count": int(cur["returned"]),
+                "cohort": "d30_lagged", "kpi": ret, "kpi_unit": "%",
+                "count": int(q["returned"]),
                 "trend": round(ret - ret_prev, 1),
                 "target_pct": _clip(ret / 8 * 100), "on_track": ret <= 8,
             },

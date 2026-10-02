@@ -86,8 +86,10 @@ function subText(dp) {
       `خرجوا مع الكوريير — ${n(dp.in_transit || 0)} في الطريق، ${n(dp.stuck || 0)} متأخر`,
       `dispatched — ${n(dp.in_transit || 0)} in transit, ${n(dp.stuck || 0)} overdue`,
     ]),
-    del: i18n.L([`${n(dp.count)} أوردر اتسلّم`, `${n(dp.count)} delivered`]),
-    ret: i18n.L([`${n(dp.count)} مرتجع مفتوح`, `${n(dp.count)} open returns`]),
+    del: i18n.L([`${n(dp.count)} اتسلّم — آخر 30 يوم ناضجة`,
+                 `${n(dp.count)} delivered — matured 30d`]),
+    ret: i18n.L([`${n(dp.count)} مرتجع — آخر 30 يوم ناضجة`,
+                 `${n(dp.count)} returns — matured 30d`]),
     cod: i18n.L(["معلّق عند الكوريير", "pending at courier"]),
     mkt: i18n.L([`مبيعات — AOV ${n(dp.aov || 0)} MAD`, `sales — AOV ${n(dp.aov || 0)} MAD`]),
   };

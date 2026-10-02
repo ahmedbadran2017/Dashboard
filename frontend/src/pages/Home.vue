@@ -117,7 +117,15 @@
         <span class="text-[12px]" style="color: var(--jy-mute)">{{ i18n.t("connectAds") }}</span>
       </div>
       <div v-else-if="ads.roas" class="card mb-3 p-4 lg:break-inside-avoid">
-        <div class="mb-3 text-[13px] font-extrabold">{{ i18n.t("adsTitle") }}</div>
+        <div class="mb-0.5 text-[13px] font-extrabold">{{ i18n.t("adsTitle") }}</div>
+        <!-- Spend is a trailing 30-day figure per ad (the sync stores no daily
+             rows), so these three numbers are NOT the selected period's. Saying
+             which window they cover is the difference between a useful number
+             and a wrong one. -->
+        <div class="mb-3 text-[10.5px]" style="color: var(--jy-mute)">
+          {{ i18n.L([`آخر ${ads.window_days || 30} يوم`, `Last ${ads.window_days || 30} days`]) }}
+          <template v-if="ads.synced_on"> · {{ i18n.L(["آخر مزامنة", "synced"]) }} {{ ads.synced_on }}</template>
+        </div>
         <div class="mb-3 grid grid-cols-3 gap-2">
           <div class="rounded-[10px] p-2.5" style="background: var(--jy-green-tint)">
             <div class="text-[10px]" style="color: var(--jy-green)">{{ i18n.t("roas") }}</div>
