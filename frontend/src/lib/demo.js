@@ -281,6 +281,27 @@ const ADS = {
     channels: [{ id: "meta", spend: 152000, share: 63.1 }, { id: "tiktok", spend: 60000, share: 24.9 }, { id: "google", spend: 29000, share: 12.0 }] },
 };
 
+// "Needs you today" — shape of alerts.needs_you, counts from production.
+const NEEDS_YOU = [
+  { key: "overdue_courier", severity: "red", count: 1050, value: 223138, rows: [
+    { name: "#256085", customer: "Mina M.", city: "", value: 189, age: 30, age_unit: "days", carrier_status: "Delivery Exception" },
+    { name: "J-004823", customer: "Atiqa B.", city: "Tanger", value: 249, age: 30, age_unit: "days", carrier_status: "Delivery Exception" },
+    { name: "#259910", customer: "Salma R.", city: "Fès", value: 139, age: 22, age_unit: "days", carrier_status: "In Transit" },
+    { name: "#260418", customer: "Youssef K.", city: "Agadir", value: 304, age: 12, age_unit: "days", carrier_status: "In Transit" },
+    { name: "#261002", customer: "Hanane L.", city: "Meknès", value: 99, age: 6, age_unit: "days", carrier_status: "Pending" },
+  ] },
+  { key: "cod_overdue", severity: "red", count: 412, value: 99870, rows: [
+    { name: "#258733", customer: "Rachid E.", city: "Casablanca", value: 1493, age: 19, age_unit: "days", carrier_status: "" },
+    { name: "#259120", customer: "Nadia O.", city: "Rabat", value: 862, age: 14, age_unit: "days", carrier_status: "" },
+    { name: "J-008811", customer: "Imane T.", city: "Oujda", value: 499, age: 9, age_unit: "days", carrier_status: "" },
+  ] },
+  { key: "not_contacted", severity: "orange", count: 19, value: 3940, rows: [
+    { name: "#263051", customer: "Hasna A.", city: "Salé", value: 189, age: 61, age_unit: "hours", carrier_status: "" },
+    { name: "J-009610", customer: "Joudia S.", city: "Kénitra", value: 229, age: 51, age_unit: "hours", carrier_status: "" },
+    { name: "#263143", customer: "Mariam D.", city: "Tétouan", value: 139, age: 48, age_unit: "hours", carrier_status: "" },
+  ] },
+];
+
 export async function demoResolve(method, params = {}) {
   let p = params.period || "today";
   // custom range → nearest dataset by span (the real backend aggregates exactly)
@@ -338,6 +359,8 @@ export async function demoResolve(method, params = {}) {
       return TEAM;
     case "list_alerts":
       return ALERTS;
+    case "needs_you":
+      return NEEDS_YOU;
     case "badge_count":
       return ALERTS.length;
     case "storefront":

@@ -153,17 +153,34 @@ const STR = {
 };
 
 // Alert copy (title + sub) keyed by the backend alert `key`; {v} substitutes count/value.
+// "Needs you today" — the queues at the top of Home.
+export const NEEDS_COPY = {
+  overdue_courier: {
+    title: ["متأخر عند الكوريير", "Overdue with the courier"],
+    sub: ["خرج من أكتر من 3 أيام ولسه ما اتسلّمش", "Shipped 3+ days ago, not delivered"],
+  },
+  cod_overdue: {
+    title: ["فلوس متأخرة عند الكوريير", "Cash overdue from the courier"],
+    sub: ["اتسلّم ومادفعش من أكتر من 7 أيام", "Delivered, unpaid past 7 days"],
+  },
+  not_contacted: {
+    title: ["أوردرات ماحدش كلّمها", "Orders nobody has called"],
+    sub: ["أكتر من 4 ساعات من غير أول مكالمة تأكيد", "Over 4h with no first confirmation call"],
+  },
+};
+
 export const ALERT_COPY = {
   stale_shipments: {
     title: ["{v} أوردر خرج من أكتر من 30 يوم وحالته ما اتقفلتش",
             "{v} shipments older than 30 days never closed out"],
-    body: ["مش طابور شغل يومي — دي سجلات محتاجة تسوية مع الكوريير",
-           "Not a daily queue — records to reconcile with the carrier"],
+    sub: ["مش طابور شغل يومي — دي سجلات محتاجة تسوية مع الكوريير",
+          "Not a daily queue — records to reconcile with the carrier"],
   },
   stuck: {
-    title: ["{v} أوردر متأخر عند الكوريير (خرج من أكتر من يومين)",
-            "{v} orders overdue with the carrier (shipped 2+ days ago)"],
-    sub: ["الكوريير ما سحبش دفعة — اتواصل معاه", "Carrier missed pickup — contact them"],
+    title: ["{v} أوردر متأخر عند الكوريير (خرج من أكتر من 3 أيام)",
+            "{v} orders overdue with the carrier (shipped 3+ days ago)"],
+    sub: ["خرجوا من المخزن ولسه ما اتسلّموش — تابع مع الكوريير",
+          "Left the warehouse, not yet delivered — chase the carrier"],
   },
   cod_overdue: {
     title: ["{v} MAD تحصيل COD متأخر أكتر من 7 أيام", "{v} MAD COD overdue > 7 days"],

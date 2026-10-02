@@ -55,6 +55,9 @@
       </div>
     </div>
 
+    <!-- What has to be worked today, before any of the context below. -->
+    <NeedsYou />
+
     <!-- Loading / error -->
     <div v-if="res.loading && !d.orders" class="py-8 text-center text-sm lg:[column-span:all]" style="color: var(--jy-mute)">{{ i18n.t("loading") }}</div>
 
@@ -259,6 +262,7 @@
 import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import Icon from "@/components/Icon.vue";
+import NeedsYou from "@/components/NeedsYou.vue";
 import PeriodTabs from "@/components/PeriodTabs.vue";
 import { createResource } from "@/lib/resource";
 import { useI18n } from "@/i18n";
