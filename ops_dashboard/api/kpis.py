@@ -104,20 +104,68 @@ def _cod(company):
     return {k: flt(v) for k, v in row.items()}
 
 
-def _late(company):
-    """Dispatched but not delivered, and moving for > 48h. The 'stuck' count."""
+# How long after leaving the warehouse an order stops being "in transit" and
+# starts being a problem, and the point past which it is no longer a queue to
+# work but a record nobody ever closed.
+LATE_AFTER_DAYS = 2
+STALE_AFTER_DAYS = 30
+
+
+def _late(company, detail=False):
+    """Orders that left the warehouse and are overdue. The 'stuck' count.
+
+    Two things were wrong with the number this used to return, and together they
+    made it read 14,330 on a day when the real queue was about a thousand.
+
+    It aged orders by COALESCE(custom_shipped_at, so.modified). custom_shipped_at
+    is NULL on 100% of these rows — the warehouse stage timestamps are simply not
+    being written — so every order fell back to `modified`, which moves whenever
+    anything on the record is touched for any reason. "Has not moved in 48h" was
+    measured with a clock that is not about movement. The Delivery Note is the
+    real signal: 100% of its lines carry against_sales_order, and 97% of recent
+    undelivered-but-shipped orders have one, so its posting_date IS the day the
+    order left.
+
+    And it had no lower bound, so it counted every order ever dispatched and
+    never marked delivered — 85% of them older than 30 days. Those are not late
+    deliveries, they are rows whose status was never closed out, and burying a
+    real queue of ~1,100 inside a 14,330 alert is the same as having no alert.
+
+    Returns the ACTIONABLE count (overdue, still recent enough to chase). With
+    detail=True, returns the bands, including the stale backlog counted
+    separately so it stays visible without shouting daily.
+    """
     params = {}
     comp = B.company_cond(company, params)
-    n = frappe.db.sql(
+    rows = frappe.db.sql(
         f"""
-        SELECT COUNT(*) FROM `tabSales Order` so
-        WHERE so.docstatus = 1 AND {B.IS_REAL}
-          AND {B.IS_DISPATCHED} AND NOT {B.IS_DELIVERED} AND NOT {B.IS_RETURNED}
-          AND COALESCE(so.custom_shipped_at, so.modified) < NOW() - INTERVAL 48 HOUR{comp}
+        SELECT DATEDIFF(CURDATE(), shipped_on) AS age
+        FROM (
+            SELECT so.name, MIN(dn.posting_date) AS shipped_on
+            FROM `tabSales Order` so
+            JOIN `tabDelivery Note Item` dni ON dni.against_sales_order = so.name
+            JOIN `tabDelivery Note` dn ON dn.name = dni.parent AND dn.docstatus = 1
+            WHERE so.docstatus = 1 AND {B.IS_REAL}
+              AND {B.IS_DISPATCHED} AND NOT {B.IS_DELIVERED} AND NOT {B.IS_RETURNED}{comp}
+            GROUP BY so.name
+        ) d
+        WHERE shipped_on IS NOT NULL
         """,
-        params,
-    )[0][0]
-    return int(n or 0)
+        params, as_dict=True,
+    )
+    in_transit = overdue = stale = 0
+    for r in rows:
+        age = int(r["age"] or 0)
+        if age <= LATE_AFTER_DAYS:
+            in_transit += 1
+        elif age <= STALE_AFTER_DAYS:
+            overdue += 1
+        else:
+            stale += 1
+    if detail:
+        return {"overdue": overdue, "in_transit": in_transit, "stale": stale,
+                "late_after_days": LATE_AFTER_DAYS, "stale_after_days": STALE_AFTER_DAYS}
+    return overdue
 
 
 def _quality(company, start_days=35, end_days=5):
@@ -171,9 +219,12 @@ def sources(period="today", company=None, from_date=None, to_date=None):
         start, end, _, _, _ = B.resolve_period(period, from_date, to_date)
         params = {}
         where = B.base_where(start, end, company, params)
+        # alias is `src` NOT `source`: SOURCE is a MariaDB keyword, and
+        # `GROUP BY source` silently collapses every row into one bucket (the whole
+        # store then reads as 100% of the first channel). Group by `src` instead.
         rows = frappe.db.sql(
             f"""
-            SELECT {B.SOURCE_CASE} AS source,
+            SELECT {B.SOURCE_CASE} AS src,
                    COUNT(*) AS orders,
                    ROUND(SUM(so.grand_total)) AS value,
                    SUM({B.IS_REAL}) AS real_orders,
@@ -181,7 +232,7 @@ def sources(period="today", company=None, from_date=None, to_date=None):
                    SUM(CASE WHEN {B.IS_RETURNED} THEN 1 ELSE 0 END) AS returned
             FROM `tabSales Order` so
             WHERE {where}
-            GROUP BY source ORDER BY orders DESC
+            GROUP BY src ORDER BY orders DESC
             """,
             params, as_dict=True,
         )
@@ -189,7 +240,7 @@ def sources(period="today", company=None, from_date=None, to_date=None):
         out = []
         for r in rows:
             out.append({
-                "id": r.source,
+                "id": r.src,
                 "orders": int(r.orders),
                 "value": flt(r.value),
                 "share": round(100.0 * r.orders / total, 1),

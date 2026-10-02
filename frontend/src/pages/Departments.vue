@@ -82,7 +82,10 @@ function subText(dp) {
   const m = {
     conf: i18n.L([`${n(dp.count)} من ${n(dp.total)} اتأكدوا`, `${n(dp.count)} of ${n(dp.total)} confirmed`]),
     wh: i18n.L(["أوردر اتحضر واتغلف", "orders picked & packed"]),
-    disp: i18n.L([`خرجوا مع الكوريير — ${n(dp.stuck || 0)} عالق`, `dispatched — ${n(dp.stuck || 0)} stuck`]),
+    disp: i18n.L([
+      `خرجوا مع الكوريير — ${n(dp.in_transit || 0)} في الطريق، ${n(dp.stuck || 0)} متأخر`,
+      `dispatched — ${n(dp.in_transit || 0)} in transit, ${n(dp.stuck || 0)} overdue`,
+    ]),
     del: i18n.L([`${n(dp.count)} أوردر اتسلّم`, `${n(dp.count)} delivered`]),
     ret: i18n.L([`${n(dp.count)} مرتجع مفتوح`, `${n(dp.count)} open returns`]),
     cod: i18n.L(["معلّق عند الكوريير", "pending at courier"]),
@@ -94,7 +97,9 @@ function subText(dp) {
 function trendText(dp) {
   if (["conf", "del", "ret"].includes(dp.id)) return signed(dp.trend) + "%";
   if (dp.id === "mkt") return signed(dp.trend) + "%";
-  if (dp.id === "disp") return "⚠ " + n(dp.stuck || 0);
+  // Only flag the overdue parcels. In-transit is the normal state of a courier
+  // network, and a warning triangle on it trains the floor to ignore the icon.
+  if (dp.id === "disp") return (dp.stuck ? "⚠ " : "") + n(dp.stuck || 0);
   if (dp.id === "cod") return i18n.L([`متأخر: ${money(dp.overdue || 0)}`, `overdue: ${money(dp.overdue || 0)}`]);
   return signed(dp.trend, 0);
 }

@@ -22,11 +22,18 @@ def list_alerts(company=None):
 def _build_alerts(company=None):
     out = []
 
-    # 1. Orders stuck in dispatch > 48h (red)
-    stuck = _late(company)
-    if stuck:
-        out.append({"key": "stuck", "severity": "red", "count": stuck,
+    # 1. Orders overdue in transit (red) + the unreconciled backlog (blue).
+    #    These are two different jobs and used to be one number: an order that
+    #    left three days ago needs the carrier chased today, while one that left
+    #    eight months ago needs its status closed out. Merged, the daily queue of
+    #    about a thousand sat inside a 14,330 red alert that nobody could act on.
+    late = _late(company, detail=True)
+    if late["overdue"]:
+        out.append({"key": "stuck", "severity": "red", "count": late["overdue"],
                     "value": None, "hours_ago": 1})
+    if late["stale"]:
+        out.append({"key": "stale_shipments", "severity": "blue",
+                    "count": late["stale"], "value": None, "hours_ago": 24})
 
     # 2. COD overdue > 7 days (red)
     cod = _cod(company)

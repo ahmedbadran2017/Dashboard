@@ -38,7 +38,8 @@ def list_departments(period="today", company=None, from_date=None, to_date=None)
         cur = _agg(start, end, company)
         prev = _agg(ps, pe, company)
         cod = _cod(company)
-        late = _late_count(company)
+        late_d = _late_detail(company)
+        late = late_d["overdue"]
 
         conf = _rate(cur["confirmed"], cur["real_orders"])
         conf_prev = _rate(prev["confirmed"], prev["real_orders"])
@@ -62,8 +63,14 @@ def list_departments(period="today", company=None, from_date=None, to_date=None)
             },
             "disp": {
                 "kpi": int(cur["dispatched"]), "kpi_unit": "", "stuck": late,
+                "in_transit": late_d["in_transit"], "stale": late_d["stale"],
                 "trend": int(cur["dispatched"] - prev["dispatched"]),
-                "target_pct": _clip(cur["dispatched"] / 130 * 100), "on_track": late < 10,
+                "target_pct": _clip(cur["dispatched"] / 130 * 100),
+                # Judged against the parcels actually in flight, not a flat count:
+                # "under 10 late" is unreachable at this volume and a card that is
+                # permanently red tells the floor nothing. Late is normal at some
+                # rate; a RISING share of it is the signal.
+                "on_track": late <= max(10, 0.25 * (late + late_d["in_transit"])),
             },
             "del": {
                 "kpi": deliv, "kpi_unit": "%", "count": int(cur["delivered"]),
@@ -90,9 +97,9 @@ def list_departments(period="today", company=None, from_date=None, to_date=None)
     return B.cached(ck, build)
 
 
-def _late_count(company):
+def _late_detail(company):
     from ops_dashboard.api.kpis import _late
-    return _late(company)
+    return _late(company, detail=True)
 
 
 @frappe.whitelist()

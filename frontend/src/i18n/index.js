@@ -153,8 +153,15 @@ const STR = {
 
 // Alert copy (title + sub) keyed by the backend alert `key`; {v} substitutes count/value.
 export const ALERT_COPY = {
+  stale_shipments: {
+    title: ["{v} أوردر خرج من أكتر من 30 يوم وحالته ما اتقفلتش",
+            "{v} shipments older than 30 days never closed out"],
+    body: ["مش طابور شغل يومي — دي سجلات محتاجة تسوية مع الكوريير",
+           "Not a daily queue — records to reconcile with the carrier"],
+  },
   stuck: {
-    title: ["{v} أوردر عالق في الشحن أكتر من 48 ساعة", "{v} orders stuck in dispatch > 48h"],
+    title: ["{v} أوردر متأخر عند الكوريير (خرج من أكتر من يومين)",
+            "{v} orders overdue with the carrier (shipped 2+ days ago)"],
     sub: ["الكوريير ما سحبش دفعة — اتواصل معاه", "Carrier missed pickup — contact them"],
   },
   cod_overdue: {
