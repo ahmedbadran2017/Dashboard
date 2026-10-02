@@ -194,6 +194,12 @@
           <span class="text-[13px] font-extrabold">{{ i18n.t("codTitle") }}</span>
           <span class="pill px-2 py-0.5 text-[10px] font-bold" style="background: var(--jy-green-tint); color: var(--jy-green)">Cathedis</span>
         </div>
+        <!-- A cash balance, not a period figure: year-to-date by design (ported
+             from the accounting portal). It sits beside today's order count, so
+             it has to say so or it reads as today's takings. -->
+        <div class="-mt-2 mb-3 text-[10.5px]" style="color: var(--jy-mute)">
+          {{ i18n.L(["رصيد من أول السنة", "Year to date balance"]) }}
+        </div>
         <div class="grid grid-cols-2 gap-2.5">
           <div class="rounded-[10px] p-3" style="background: var(--jy-green-tint)">
             <div class="text-[11px]" style="color: var(--jy-green)">{{ i18n.t("codCollected") }}</div>
@@ -204,6 +210,15 @@
             <div class="num text-[18px] font-extrabold" style="color: var(--jy-orange-ink)">{{ moneyFull(d.cod.pending) }} <span class="text-[11px]">MAD</span></div>
           </div>
         </div>
+        <!-- The one part of this card a daily review can act on: delivered,
+             still unpaid, and past the carrier's 7-day settlement. -->
+        <div v-if="d.cod.overdue" class="mt-2.5 flex items-center justify-between rounded-[10px] px-3 py-2"
+             style="background: var(--jy-red-tint)">
+          <span class="text-[11px] font-bold" style="color: var(--jy-red)">
+            {{ i18n.L(["متأخر عن التسوية (+7 أيام)", "Overdue for settlement (7d+)"]) }}
+          </span>
+          <span class="num text-[13px] font-extrabold" style="color: var(--jy-red)">{{ moneyFull(d.cod.overdue) }} MAD</span>
+        </div>
       </div>
 
       <!-- Late orders strip -->
@@ -212,7 +227,10 @@
         style="background: var(--jy-red-tint); border: 1px solid rgba(196,48,28,0.18)"
         @click="router.push('/ops/alerts')"
       >
-        <span class="anim-pulse num grid h-8 w-8 shrink-0 place-items-center rounded-full text-[13px] font-extrabold text-white" style="background: var(--jy-red)">{{ d.late }}</span>
+        <!-- min-w + padding, not a fixed 32px circle: the count is routinely
+             four digits, and at five ("14330") it spilled out of the circle and
+             floated loose on the page. -->
+        <span class="anim-pulse num grid h-8 min-w-8 shrink-0 place-items-center rounded-full px-2 text-[13px] font-extrabold text-white" style="background: var(--jy-red)">{{ n(d.late) }}</span>
         <span class="flex-1">
           <span class="block text-[13px] font-extrabold" style="color: var(--jy-red)">{{ i18n.t("lateTitle") }}</span>
           <span class="block text-[11px]" style="color: var(--jy-text-2)">{{ i18n.t("lateSub") }}</span>

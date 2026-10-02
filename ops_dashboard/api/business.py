@@ -56,10 +56,21 @@ def low_stock(company=None, threshold=30, limit=10):
     def build():
         rows = frappe.db.sql(
             """
-            SELECT b.item_code, MAX(i.item_name) AS name,
+            SELECT b.item_code,
+                   -- The name the customer bought it under, not the Item master's.
+                   -- tabItem.item_name is the raw supplier title — Turkish or
+                   -- English for most imported lines ("18 li Buzdolabı ve
+                   -- Mikrodalga Saklama Kabı…") — while the order line carries
+                   -- the storefront title ("Set de 18 contenants de
+                   -- conservation…"), which is what the team knows the product
+                   -- as. Latest order wins, so a renamed product shows its
+                   -- current name. Falls back to the master name.
+                   COALESCE(NULLIF(MAX(s.so_name), ''), MAX(i.item_name)) AS name,
                    ROUND(SUM(b.actual_qty)) AS qty, s.sold
             FROM `tabBin` b JOIN `tabItem` i ON i.name = b.item_code
-            JOIN (SELECT soi.item_code, SUM(soi.qty) AS sold
+            JOIN (SELECT soi.item_code, SUM(soi.qty) AS sold,
+                         SUBSTRING_INDEX(GROUP_CONCAT(soi.item_name
+                             ORDER BY so.transaction_date DESC SEPARATOR '||'), '||', 1) AS so_name
                   FROM `tabSales Order Item` soi JOIN `tabSales Order` so ON so.name = soi.parent
                   WHERE so.transaction_date >= CURDATE() - INTERVAL 30 DAY AND so.docstatus = 1
                   GROUP BY soi.item_code) s ON s.item_code = b.item_code

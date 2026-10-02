@@ -89,8 +89,9 @@ const STR = {
   codCollected: ["اتحصّل", "Collected"],
   codPending: ["معلّق عند الكوريير", "Pending at courier"],
   // late
-  lateTitle: ["أوردرات متأخرة / عالقة", "Late / stuck orders"],
-  lateSub: ["فاتت 48 ساعة من غير حركة — اضغط للتفاصيل", "No movement for 48h — tap for details"],
+  lateTitle: ["أوردرات متأخرة عند الكوريير", "Orders overdue with the courier"],
+  lateSub: ["خرجت من أكتر من 3 أيام ولسه ما اتسلّمتش — اضغط للتفاصيل",
+            "Shipped 3+ days ago, not yet delivered — tap for details"],
   // daily report
   reportTitle: ["التقرير اليومي", "Daily report"],
   reportSub: ["ملخص الأداء يتبعت أوتوماتيك الساعة 10 مساءً", "Performance summary auto-sent at 10 PM"],
