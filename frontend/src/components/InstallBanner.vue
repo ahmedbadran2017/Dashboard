@@ -19,7 +19,7 @@
         <button
           v-if="!inst.ios.value"
           class="tap shrink-0 rounded-full px-4 text-[12px] font-extrabold"
-          style="background: var(--jy-orange); color: #1a1a1a; height: 36px; min-height: 36px"
+          style="background: var(--jy-orange); color: #fff; height: 36px; min-height: 36px"
           @click="inst.promptInstall"
         >{{ i18n.t("installBtn") }}</button>
         <button class="grid h-7 w-7 shrink-0 place-items-center rounded-full" style="background: var(--jy-bg-2)" @click="inst.dismiss" aria-label="dismiss">

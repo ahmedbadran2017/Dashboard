@@ -10,7 +10,7 @@
         <Icon :name="meta.icon" :size="24" :style="{ color: acc.c }" />
       </div>
       <div>
-        <div class="text-[18px] font-extrabold">{{ i18n.L(meta.name) }}</div>
+        <div class="display text-[22px]">{{ i18n.L(meta.name) }}</div>
       </div>
     </div>
 

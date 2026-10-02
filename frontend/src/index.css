@@ -1,59 +1,87 @@
-@import url("https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Tajawal:wght@300;400;500;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=Inter:wght@500;600;700;800&family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Alexandria:wght@400;500;600;700&display=swap");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /* ============================================================
-   Justyol Design System tokens (canonical) — light defaults.
-   Dark mode swaps a handful of variables on the app root
-   ([data-theme="dark"]); the hero card stays #1a1a1a in both.
+   Justyol DESK language — the visual system shared by every internal
+   portal (supplier portal, admin, growth). Ported verbatim from
+   supplier_portal/frontend/src/index.css `.desk`: warm stone neutrals,
+   white cards resting on a hairline with an almost-flat shadow, a
+   terracotta accent, emerald for AI/automation and amber for "needs you".
+
+   The --jy-* NAMES are kept on purpose. Every component in this app reads
+   colour through them, so re-pointing the values re-skins the whole
+   dashboard in one place instead of touching every template. Read them as
+   roles, not hues: --jy-orange is "the accent" (now terracotta), not orange.
+
+   Error red (#b91c1c) is deliberately kept visibly distinct from the
+   terracotta accent — the accent must never read as "something is wrong".
    ============================================================ */
 :root {
-  --jy-orange: #ff9500;
-  --jy-orange-press: #e88800;
-  --jy-orange-soft: #fff4e0;
-  --jy-orange-ink: #b26800; /* text on orange-soft chips */
-  --jy-red: #c4301c;
-  --jy-red-tint: #fdecea;
-  --jy-blue: #0077ff;
-  --jy-blue-tint: #e6f1ff;
-  --jy-green: #1f9d55;
-  --jy-green-tint: #e7f5ec;
+  --jy-orange: #c4492a;        /* accent (terracotta) */
+  --jy-orange-press: #a33a22;
+  --jy-orange-soft: #fdf3ee;   /* accent tint */
+  --jy-orange-ink: #a33a22;    /* text on accent tint */
+  --jy-orange-border: #f0c6b3;
+  --jy-red: #b91c1c;           /* error / at risk */
+  --jy-red-tint: #fef2f2;
+  --jy-blue: #0369a1;          /* informational */
+  --jy-blue-tint: #f0f9ff;
+  --jy-green: #047857;         /* healthy / AI */
+  --jy-green-tint: #ecfdf5;
+  --jy-amber: #b45309;         /* needs you */
+  --jy-amber-tint: #fffbeb;
   --jy-wa: #25d366;
 
-  --jy-ink: #1a1a1a;
-  --jy-text-2: #3a3a3a;
-  --jy-mute: #878787;
-  --jy-mute-2: #b8b8b8;
-  --jy-line: #efefef;
-  --jy-bg: #f7f7f8;
-  --jy-bg-2: #f1f2f4;
+  --jy-ink: #1c1917;           /* stone-900 */
+  --jy-text-2: #44403c;        /* stone-700 */
+  --jy-mute: #78716c;          /* stone-500 — AA for text */
+  --jy-mute-2: #a8a29e;        /* stone-400 — decorative only */
+  --jy-line: #e7e5e4;          /* stone-200 hairline */
+  --jy-bg: #faf9f7;            /* warm stone-50 */
+  --jy-bg-2: #f5f5f4;          /* fills / tracks */
   --jy-surface: #ffffff;
-  --jy-pressed: #f4f4f4;
+  --jy-pressed: #faf9f8;
 
-  --jy-font: "Instrument Sans", "Tajawal", system-ui, -apple-system, sans-serif;
-  --shadow-1: 0 1px 2px rgba(15, 15, 15, 0.06);
-  --shadow-2: 0 4px 12px rgba(15, 15, 15, 0.08);
-  --shadow-nav: 0 -1px 0 rgba(0, 0, 0, 0.04), 0 -8px 20px rgba(16, 24, 40, 0.06);
+  --jy-font: "Hanken Grotesk", "Inter", system-ui, -apple-system, sans-serif;
+  --num-font: "Inter", system-ui, -apple-system, sans-serif;
+  --display-font: "Fraunces", "Hanken Grotesk", Georgia, serif;
+  --shadow-1: 0 1px 3px rgba(0, 0, 0, 0.03);
+  --shadow-2: 0 4px 20px -6px rgba(0, 0, 0, 0.07);
+  --shadow-nav: 0 -1px 0 rgba(0, 0, 0, 0.04), 0 -8px 20px rgba(28, 25, 23, 0.05);
   color-scheme: light;
 }
-[dir="rtl"] { --jy-font: "Tajawal", "Instrument Sans", system-ui, sans-serif; }
+/* Arabic keeps Alexandria, as on the other desks. */
+[dir="rtl"] {
+  --jy-font: "Alexandria", "Hanken Grotesk", system-ui, sans-serif;
+  --display-font: "Alexandria", system-ui, sans-serif;
+}
 
+/* Dark — the desk's warm near-black stone, not a cold blue-grey. */
 :root[data-theme="dark"] {
-  --jy-surface: #1d1e23;
-  --jy-bg: #131417;
-  --jy-bg-2: #282a30;
-  --jy-line: #2e3036;
-  --jy-ink: #f4f5f7;
-  --jy-text-2: #c7c9ce;
-  --jy-mute: #8d9099;
-  --jy-mute-2: #6b6e76;
-  --jy-pressed: #2c2e34;
-  --jy-green-tint: #16301f;
-  --jy-orange-soft: #33270f;
-  --jy-red-tint: #331a15;
-  --jy-blue-tint: #14233b;
-  --jy-orange-ink: #ffb84d;
+  --jy-surface: #232020;
+  --jy-bg: #1a1816;
+  --jy-bg-2: #2b2724;
+  --jy-line: #38332f;
+  --jy-ink: #f5f4f2;
+  --jy-text-2: #d6d3d1;
+  --jy-mute: #a8a29e;
+  --jy-mute-2: #78716c;
+  --jy-pressed: #2a2623;
+  --jy-orange-soft: #38241c;
+  --jy-orange-ink: #f0a58a;
+  --jy-orange-border: #5c3526;
+  --jy-green: #34d399;
+  --jy-green-tint: #0e2c22;
+  --jy-red: #f87171;
+  --jy-red-tint: #3a1a1a;
+  --jy-amber: #fbbf24;
+  --jy-amber-tint: #2e2410;
+  --jy-blue: #7dd3fc;
+  --jy-blue-tint: #0c2a3d;
+  --shadow-1: 0 1px 3px rgba(0, 0, 0, 0.45);
+  --shadow-2: 0 6px 22px -6px rgba(0, 0, 0, 0.55);
   --shadow-nav: 0 -1px 0 rgba(0, 0, 0, 0.4), 0 -8px 20px rgba(0, 0, 0, 0.35);
   color-scheme: dark;
 }
@@ -72,7 +100,9 @@
   }
   #app { min-height: 100%; }
   /* numbers always LTR + tabular, even inside RTL copy */
-  .num { direction: ltr; unicode-bidi: isolate; font-variant-numeric: tabular-nums; }
+  .num { direction: ltr; unicode-bidi: isolate; font-family: var(--num-font); font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+  /* Editorial page titles, as on the other desks. */
+  .display { font-family: var(--display-font); font-weight: 600; letter-spacing: -0.015em; }
   /* hide scrollbars everywhere */
   * { scrollbar-width: none; }
   *::-webkit-scrollbar { display: none; }
@@ -82,7 +112,7 @@
   .card {
     background: var(--jy-surface);
     border: 1px solid var(--jy-line);
-    border-radius: 14px;
+    border-radius: 12px;
     box-shadow: var(--shadow-1);
   }
   .pill { border-radius: 9999px; }
@@ -98,9 +128,9 @@
 @keyframes sheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 @keyframes staggerIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 @keyframes pulseRing {
-  0% { box-shadow: 0 0 0 0 rgba(196, 48, 28, 0.35); }
-  70% { box-shadow: 0 0 0 9px rgba(196, 48, 28, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(196, 48, 28, 0); }
+  0% { box-shadow: 0 0 0 0 rgba(185, 28, 28, 0.30); }
+  70% { box-shadow: 0 0 0 9px rgba(185, 28, 28, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(185, 28, 28, 0); }
 }
 
 .anim-screen { animation: screenIn 380ms cubic-bezier(0.3, 1, 0.3, 1) both; }

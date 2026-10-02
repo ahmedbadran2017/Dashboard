@@ -22,19 +22,19 @@
     </div>
 
     <!-- Hero KPI card -->
-    <div class="mb-3 p-[18px] lg:[column-span:all]" style="background: #1a1a1a; border: 1px solid rgba(255,255,255,0.09); border-radius: 18px">
+    <div class="card mb-3 p-[18px] lg:[column-span:all]">
       <div class="flex items-start justify-between">
         <div>
-          <div class="text-[12px]" style="color: rgba(255,255,255,0.6)">{{ i18n.t("orders") }}</div>
-          <div class="num text-[36px] font-extrabold leading-none text-white">{{ shownOrders }}</div>
-          <div class="num mt-1 text-[12px] font-bold" :style="{ color: deltaPos ? '#5ad48a' : '#ff8f7a' }">
-            {{ signed(d.orders_delta_pct) }}% <span style="color: rgba(255,255,255,0.55)">{{ cmpLabel }}</span>
+          <div class="text-[12px] font-semibold" style="color: var(--jy-mute)">{{ i18n.t("orders") }}</div>
+          <div class="num text-[36px] font-extrabold leading-none" style="color: var(--jy-ink)">{{ shownOrders }}</div>
+          <div class="num mt-1 text-[12px] font-bold" :style="{ color: deltaPos ? 'var(--jy-green)' : 'var(--jy-red)' }">
+            {{ signed(d.orders_delta_pct) }}% <span class="font-medium" style="color: var(--jy-mute)">{{ cmpLabel }}</span>
           </div>
         </div>
         <div class="text-end">
-          <div class="text-[12px]" style="color: rgba(255,255,255,0.6)">{{ i18n.t("salesValue") }}</div>
+          <div class="text-[12px] font-semibold" style="color: var(--jy-mute)">{{ i18n.t("salesValue") }}</div>
           <div class="num text-[24px] font-extrabold" style="color: var(--jy-orange)">{{ money(d.value) }}</div>
-          <div class="text-[11px]" style="color: rgba(255,255,255,0.45)">{{ d.currency }}</div>
+          <div class="text-[11px]" style="color: var(--jy-mute)">{{ d.currency }}</div>
         </div>
       </div>
 
@@ -42,14 +42,14 @@
       <div class="mt-4 flex items-end justify-between gap-1.5" style="height: 46px">
         <div v-for="(b, i) in weekBars" :key="i" class="flex flex-1 flex-col items-center justify-end gap-1" style="height: 46px">
           <div class="grow-up w-full rounded-t" :style="{ height: b.h, background: b.color, animationDelay: b.delay }" />
-          <span class="text-[9px]" style="color: rgba(255,255,255,0.5)">{{ b.label }}</span>
+          <span class="text-[9px]" style="color: var(--jy-mute)">{{ b.label }}</span>
         </div>
       </div>
 
       <!-- Forecast -->
-      <div v-if="d.forecast" class="mt-3 flex items-center gap-2 rounded-[10px] px-3 py-2" style="background: rgba(255,255,255,0.07)">
+      <div v-if="d.forecast" class="mt-3 flex items-center gap-2 rounded-[10px] px-3 py-2" style="background: var(--jy-orange-soft)">
         <Icon name="trend" :size="15" style="color: var(--jy-orange)" />
-        <span class="text-[12px]" style="color: rgba(255,255,255,0.8)">
+        <span class="text-[12px]" style="color: var(--jy-text-2)">
           {{ i18n.t("forecast") }} <span class="num font-bold" style="color: var(--jy-orange)">~{{ n(d.forecast) }}</span> {{ i18n.t("forecastUnit") }}
         </span>
       </div>
@@ -347,7 +347,9 @@ const weekBars = computed(() => {
     return {
       h: Math.round(h) + "px",
       label,
-      color: i === week.length - 1 ? "var(--jy-orange)" : "rgba(255,255,255,0.22)",
+      // Past days in quiet stone, today in the accent. (These were white at
+      // 22% for the old always-dark hero; on a white card they vanished.)
+      color: i === week.length - 1 ? "var(--jy-orange)" : "var(--jy-line)",
       delay: i * 55 + "ms",
     };
   });
@@ -356,7 +358,7 @@ const weekBars = computed(() => {
 const funnel = computed(() => {
   const f = d.value.funnel || {};
   const stages = [
-    { key: "new", label: i18n.t("fNew"), color: "#b8b8b8", v: f.new },
+    { key: "new", label: i18n.t("fNew"), color: "var(--jy-mute-2)", v: f.new },
     { key: "confirmed", label: i18n.t("fConfirmed"), color: "var(--jy-orange)", v: f.confirmed },
     { key: "dispatched", label: i18n.t("fDispatched"), color: "var(--jy-blue)", v: f.dispatched },
     { key: "delivered", label: i18n.t("fDelivered"), color: "var(--jy-green)", v: f.delivered },

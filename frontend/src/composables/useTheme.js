@@ -6,12 +6,13 @@ import { ref } from "vue";
 const STORAGE_KEY = "ops.theme";
 
 function initial() {
-  // Respect the user's saved choice; otherwise default to dark.
+  // Respect the user's saved choice; otherwise light — the desk language every
+  // internal portal shares opens light, and dark stays one tap away.
   if (typeof localStorage !== "undefined") {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved === "dark" || saved === "light") return saved;
   }
-  return "dark";
+  return "light";
 }
 
 const theme = ref(initial());
@@ -19,7 +20,7 @@ const theme = ref(initial());
 export function applyThemeToRoot() {
   document.documentElement.setAttribute("data-theme", theme.value);
   const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.setAttribute("content", theme.value === "dark" ? "#131417" : "#ffffff");
+  if (meta) meta.setAttribute("content", theme.value === "dark" ? "#1a1816" : "#faf9f7");
 }
 
 export function useTheme() {

@@ -41,7 +41,7 @@
       </div>
       <button
         class="tap w-full rounded-[12px] text-[13px] font-extrabold disabled:opacity-40"
-        style="background: var(--jy-orange); color: #1a1a1a; height: 44px"
+        style="background: var(--jy-orange); color: #fff; height: 44px"
         :disabled="!from || !to"
         @click="apply"
       >{{ i18n.t("applyBtn") }}</button>

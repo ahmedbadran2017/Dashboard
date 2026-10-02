@@ -1,6 +1,6 @@
 <template>
   <div class="lg:mx-auto lg:max-w-3xl">
-    <h1 class="mb-3 text-[17px] font-extrabold">{{ i18n.t("financeTitle") }}</h1>
+    <h1 class="display mb-3 text-[22px]">{{ i18n.t("financeTitle") }}</h1>
 
     <div v-if="cashRes.loading && !cash.currency" class="py-8 text-center text-sm" style="color: var(--jy-mute)">{{ i18n.t("loading") }}</div>
 

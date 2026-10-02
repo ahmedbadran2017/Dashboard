@@ -1,6 +1,6 @@
 <template>
   <div>
-    <h1 class="mb-3 text-[17px] font-extrabold">{{ i18n.t("ordersTitle") }}</h1>
+    <h1 class="display mb-3 text-[22px]">{{ i18n.t("ordersTitle") }}</h1>
 
     <!-- Search -->
     <div class="mb-3 flex items-center gap-2 rounded-full px-3.5 py-2.5" style="background: var(--jy-bg-2)">

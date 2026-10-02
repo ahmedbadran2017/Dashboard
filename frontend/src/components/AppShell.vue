@@ -2,7 +2,7 @@
   <div class="flex min-h-screen" style="background: var(--jy-bg)">
     <!-- ── Desktop sidebar (lg+) ── -->
     <aside
-      class="sticky top-0 hidden h-screen w-60 shrink-0 flex-col lg:flex"
+      class="sticky top-0 hidden h-screen w-[212px] shrink-0 flex-col lg:flex"
       style="background: var(--jy-surface); border-inline-end: 1px solid var(--jy-line)"
     >
       <div class="px-5 pb-4 pt-6">
@@ -12,13 +12,13 @@
       <nav class="flex-1 space-y-1 px-3">
         <button
           v-for="tb in tabs" :key="tb.id"
-          class="flex w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-start text-[14px] font-bold transition"
+          class="flex w-full items-center gap-2.5 rounded-[8px] px-2.5 py-2 text-start text-[13.5px] font-semibold transition"
           :style="active === tb.id
             ? 'background: var(--jy-orange-soft); color: var(--jy-orange-ink)'
-            : 'color: var(--jy-mute)'"
+            : 'color: var(--jy-text-2)'"
           @click="go(tb.to)"
         >
-          <Icon :name="tb.icon" :size="20" :stroke="active === tb.id ? 2 : 1.8"
+          <Icon :name="tb.icon" :size="18" :stroke="active === tb.id ? 2 : 1.8"
                 :style="{ color: active === tb.id ? 'var(--jy-orange)' : 'var(--jy-mute)' }" />
           <span>{{ tb.label }}</span>
           <span v-if="tb.id === 'alerts' && badge > 0"

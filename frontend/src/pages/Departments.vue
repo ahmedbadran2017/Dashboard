@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="mb-3 flex items-center justify-between">
-      <h1 class="text-[17px] font-extrabold">{{ i18n.t("deptsTitle") }}</h1>
+      <h1 class="display text-[22px]">{{ i18n.t("deptsTitle") }}</h1>
     </div>
     <PeriodTabs class="mb-3" />
 

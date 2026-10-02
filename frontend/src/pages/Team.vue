@@ -1,6 +1,6 @@
 <template>
   <div>
-    <h1 class="mb-3 text-[17px] font-extrabold">{{ i18n.t("teamTitle") }}</h1>
+    <h1 class="display mb-3 text-[22px]">{{ i18n.t("teamTitle") }}</h1>
     <PeriodTabs class="mb-3" />
 
     <div v-if="res.loading && !sections.length" class="py-8 text-center text-sm" style="color: var(--jy-mute)">{{ i18n.t("loading") }}</div>
